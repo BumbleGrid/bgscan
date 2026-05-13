@@ -1,0 +1,20 @@
+# Sample bgscan configuration. Copy to bgconfig.yaml beside the bgscan binary,
+# or pass an explicit path: bgscan --config /path/to/bgconfig.yaml
+#
+# All keys below are required when using a config file (empty values are allowed
+# where noted). CLI flags override these values when set.
+
+# Path to kubeconfig, or "" for default discovery (in-cluster, then ~/.kube/config).
+kubeconfig: ""
+
+# Kubeconfig context name, or "" for current-context.
+context: ""
+
+# Namespaces to scan; [] means all namespaces you can access.
+namespaces: []
+
+# BGSpec JSON output path; "-" is stdout.
+output: "-"
+
+# Stamped into node/edge meta.extractorVersion in the emitted document.
+extractor_version: "0.1.0"
