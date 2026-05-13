@@ -9,9 +9,8 @@ import (
 	"github.com/BumbleGrid/bgbase/floor"
 	"github.com/BumbleGrid/bgbase/graph"
 	"github.com/BumbleGrid/bgbase/node"
+	"github.com/BumbleGrid/bgbase/scanner/k8s"
 	"github.com/BumbleGrid/bgscan/config"
-	"github.com/BumbleGrid/bgscan/internal/k8s"
-	"github.com/BumbleGrid/bgscan/internal/mapper"
 	"github.com/spf13/cobra"
 )
 
@@ -38,10 +37,10 @@ bgspec.schema.json.`,
 		}
 		reader := k8s.NewReader(client)
 		lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
-		trans := mapper.NewNodeTranslator()
-		res := mapper.NewEdgeResolver()
+		trans := k8s.NewNodeTranslator()
+		res := k8s.NewEdgeResolver()
 		extractedAt := time.Now().UTC().Format(time.RFC3339)
-		tctx := mapper.K8sTranslateContext{
+		tctx := k8s.K8sTranslateContext{
 			Floor:         0,
 			Meta:          node.Meta{ExtractorVersion: cfg.ExtractorVersion, ExtractedAt: extractedAt},
 			ClusterNodeID: "cluster/main",
