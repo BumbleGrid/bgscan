@@ -9,10 +9,12 @@ import (
 	"github.com/BumbleGrid/bgbase/node"
 )
 
-func testEdgeNode(id string, kind node.BgKind, label string, tags ...string) node.Data {
+func testEdgeNode(id string, kind node.BgKind, label string, tags map[string]string) node.Data {
 	meta := node.Meta{
-		Tags:             append([]string(nil), tags...),
 		ExtractorVersion: "1.0",
+	}
+	if len(tags) > 0 {
+		meta.Tags = tags
 	}
 	return node.Data{
 		ID:            id,
@@ -47,7 +49,7 @@ func TestResolveEdgesCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	nodes := []node.Data{
-		testEdgeNode("c/k8s/namespaces/ns/services/a", node.BgKindServiceDiscovery, "a"),
+		testEdgeNode("c/k8s/namespaces/ns/services/a", node.BgKindServiceDiscovery, "a", nil),
 	}
 	_, err := res.ResolveEdges(ctx, nodes)
 	if err == nil {
@@ -60,9 +62,10 @@ func TestResolveEdgesTagExplicitRoutes(t *testing.T) {
 	svc := "c/k8s/namespaces/ns/services/api"
 	ing := "c/k8s/namespaces/ns/ingresses/api"
 	nodes := []node.Data{
-		testEdgeNode(ing, node.BgKindGateway, "api",
-			"k8s.edge.routes="+svc),
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "api"),
+		testEdgeNode(ing, node.BgKindGateway, "api", map[string]string{
+			"k8s.edge.routes": svc,
+		}),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "api", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -94,9 +97,10 @@ func TestResolveEdgesTagInferredRoutes(t *testing.T) {
 	svc := "c/k8s/namespaces/ns/services/x"
 	ing := "c/k8s/namespaces/ns/ingresses/x"
 	nodes := []node.Data{
-		testEdgeNode(ing, node.BgKindGateway, "x",
-			"k8s.edge.routes.inferred="+svc),
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "x"),
+		testEdgeNode(ing, node.BgKindGateway, "x", map[string]string{
+			"k8s.edge.routes.inferred": svc,
+		}),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "x", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -114,10 +118,10 @@ func TestResolveEdgesTagMountsExplicitAndScheduledBy(t *testing.T) {
 	job := "c/k8s/namespaces/ns/jobs/tick-abc"
 	cron := "c/k8s/namespaces/ns/cronjobs/tick"
 	nodes := []node.Data{
-		testEdgeNode(pvc, node.BgKindStorage, "data", "k8s.edge.mounts="+pv),
-		testEdgeNode(pv, node.BgKindStorage, "pv1"),
-		testEdgeNode(job, node.BgKindJobRunner, "tick-abc", "k8s.edge.scheduled-by="+cron),
-		testEdgeNode(cron, node.BgKindJobRunner, "tick"),
+		testEdgeNode(pvc, node.BgKindStorage, "data", map[string]string{"k8s.edge.mounts": pv}),
+		testEdgeNode(pv, node.BgKindStorage, "pv1", nil),
+		testEdgeNode(job, node.BgKindJobRunner, "tick-abc", map[string]string{"k8s.edge.scheduled-by": cron}),
+		testEdgeNode(cron, node.BgKindJobRunner, "tick", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -133,8 +137,8 @@ func TestResolveEdgesTagCallsInferred(t *testing.T) {
 	a := "c/k8s/namespaces/ns/deployments/a"
 	b := "c/k8s/namespaces/ns/deployments/b"
 	nodes := []node.Data{
-		testEdgeNode(a, node.BgKindWorkload, "a", "k8s.edge.calls.inferred="+b),
-		testEdgeNode(b, node.BgKindWorkload, "b"),
+		testEdgeNode(a, node.BgKindWorkload, "a", map[string]string{"k8s.edge.calls.inferred": b}),
+		testEdgeNode(b, node.BgKindWorkload, "b", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -145,16 +149,15 @@ func TestResolveEdgesTagCallsInferred(t *testing.T) {
 	}
 }
 
-func TestResolveEdgesTagSkipsUnknownMissingEqualsUnknownPrefix(t *testing.T) {
+func TestResolveEdgesTagSkipsUnknownPrefixAndUnknownRelation(t *testing.T) {
 	res := NewEdgeResolver()
 	svc := "c/k8s/namespaces/ns/services/s"
 	nodes := []node.Data{
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "s",
-			"k8s.edge.routes",
-			"other=value",
-			"k8s.edge.unknown="+svc,
-			"k8s.edge.routes="+svc+"notfound",
-		),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "s", map[string]string{
+			"other":            "value",
+			"k8s.edge.unknown": svc,
+			"k8s.edge.routes":  svc + "notfound",
+		}),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -168,11 +171,12 @@ func TestResolveEdgesTagSkipsUnknownMissingEqualsUnknownPrefix(t *testing.T) {
 func TestResolveEdgesTagSkipsMissingTargetAndSelfLoop(t *testing.T) {
 	res := NewEdgeResolver()
 	self := "c/k8s/namespaces/ns/services/self"
+	missing := "c/k8s/namespaces/ns/services/missing"
 	nodes := []node.Data{
-		testEdgeNode(self, node.BgKindServiceDiscovery, "self",
-			"k8s.edge.routes="+self,
-			"k8s.edge.routes=c/k8s/namespaces/ns/services/missing",
-		),
+		testEdgeNode(self, node.BgKindServiceDiscovery, "self", map[string]string{
+			"k8s.edge.routes":          self,
+			"k8s.edge.routes.inferred": missing,
+		}),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -187,10 +191,9 @@ func TestResolveEdgesTagDedupesDuplicateTagLines(t *testing.T) {
 	res := NewEdgeResolver()
 	svc := "c/k8s/namespaces/ns/services/one"
 	ing := "c/k8s/namespaces/ns/ingresses/one"
-	tag := "k8s.edge.routes=" + svc
 	nodes := []node.Data{
-		testEdgeNode(ing, node.BgKindGateway, "one", tag, tag),
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "one"),
+		testEdgeNode(ing, node.BgKindGateway, "one", map[string]string{"k8s.edge.routes": svc}),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "one", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -206,8 +209,8 @@ func TestResolveEdgesHeuristicExposesSameNamespaceAndLabel(t *testing.T) {
 	svc := "c/k8s/namespaces/ns/services/web"
 	dep := "c/k8s/namespaces/ns/deployments/web"
 	nodes := []node.Data{
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "web"),
-		testEdgeNode(dep, node.BgKindWorkload, "web"),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "web", nil),
+		testEdgeNode(dep, node.BgKindWorkload, "web", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -229,8 +232,8 @@ func TestResolveEdgesHeuristicNoCrossNamespace(t *testing.T) {
 	svc := "c/k8s/namespaces/a/services/web"
 	dep := "c/k8s/namespaces/b/deployments/web"
 	nodes := []node.Data{
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "web"),
-		testEdgeNode(dep, node.BgKindWorkload, "web"),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "web", nil),
+		testEdgeNode(dep, node.BgKindWorkload, "web", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -246,8 +249,8 @@ func TestResolveEdgesHeuristicDifferentLabels(t *testing.T) {
 	svc := "c/k8s/namespaces/ns/services/frontend"
 	dep := "c/k8s/namespaces/ns/deployments/backend"
 	nodes := []node.Data{
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "frontend"),
-		testEdgeNode(dep, node.BgKindWorkload, "backend"),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "frontend", nil),
+		testEdgeNode(dep, node.BgKindWorkload, "backend", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -263,8 +266,8 @@ func TestResolveEdgesHeuristicIngressRoutesService(t *testing.T) {
 	ing := "c/k8s/namespaces/ns/ingresses/api"
 	svc := "c/k8s/namespaces/ns/services/api"
 	nodes := []node.Data{
-		testEdgeNode(ing, node.BgKindGateway, "api"),
-		testEdgeNode(svc, node.BgKindLoadBalancer, "api"),
+		testEdgeNode(ing, node.BgKindGateway, "api", nil),
+		testEdgeNode(svc, node.BgKindLoadBalancer, "api", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -274,7 +277,7 @@ func TestResolveEdgesHeuristicIngressRoutesService(t *testing.T) {
 		t.Fatalf("got %+v", out)
 	}
 	if out[0].Source != ing || out[0].Target != svc {
-		t.Fatalf("got %+v", out[0])
+		t.Fatalf("got %+v", out)
 	}
 }
 
@@ -283,8 +286,8 @@ func TestResolveEdgesHeuristicJobScheduledByCronJob(t *testing.T) {
 	job := "c/k8s/namespaces/ns/jobs/tick-7xq9"
 	cron := "c/k8s/namespaces/ns/cronjobs/tick"
 	nodes := []node.Data{
-		testEdgeNode(job, node.BgKindJobRunner, "tick-7xq9"),
-		testEdgeNode(cron, node.BgKindJobRunner, "tick"),
+		testEdgeNode(job, node.BgKindJobRunner, "tick-7xq9", nil),
+		testEdgeNode(cron, node.BgKindJobRunner, "tick", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -306,8 +309,8 @@ func TestResolveEdgesHeuristicJobNoCronPrefixMatch(t *testing.T) {
 	job := "c/k8s/namespaces/ns/jobs/standalone"
 	cron := "c/k8s/namespaces/ns/cronjobs/other"
 	nodes := []node.Data{
-		testEdgeNode(job, node.BgKindJobRunner, "standalone"),
-		testEdgeNode(cron, node.BgKindJobRunner, "other"),
+		testEdgeNode(job, node.BgKindJobRunner, "standalone", nil),
+		testEdgeNode(cron, node.BgKindJobRunner, "other", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -352,8 +355,8 @@ func TestResolveEdgesHeuristicSkipsServiceWrongPath(t *testing.T) {
 	svc := "c/k8s/namespaces/ns/configmaps/svc-named"
 	dep := "c/k8s/namespaces/ns/deployments/svc-named"
 	nodes := []node.Data{
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "svc-named"),
-		testEdgeNode(dep, node.BgKindWorkload, "svc-named"),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "svc-named", nil),
+		testEdgeNode(dep, node.BgKindWorkload, "svc-named", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -371,12 +374,10 @@ func TestResolveEdgesDeterministicSortByID(t *testing.T) {
 	ingSecond := "c/k8s/namespaces/ns/ingresses/second"
 	ingFirst := "c/k8s/namespaces/ns/ingresses/first"
 	nodes := []node.Data{
-		testEdgeNode(ingSecond, node.BgKindGateway, "second",
-			"k8s.edge.routes="+svcB),
-		testEdgeNode(ingFirst, node.BgKindGateway, "first",
-			"k8s.edge.routes="+svcA),
-		testEdgeNode(svcA, node.BgKindServiceDiscovery, "a"),
-		testEdgeNode(svcB, node.BgKindServiceDiscovery, "b"),
+		testEdgeNode(ingSecond, node.BgKindGateway, "second", map[string]string{"k8s.edge.routes": svcB}),
+		testEdgeNode(ingFirst, node.BgKindGateway, "first", map[string]string{"k8s.edge.routes": svcA}),
+		testEdgeNode(svcA, node.BgKindServiceDiscovery, "a", nil),
+		testEdgeNode(svcB, node.BgKindServiceDiscovery, "b", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -395,9 +396,10 @@ func TestResolveEdgesHeuristicAndTagSameEdgeDeduped(t *testing.T) {
 	svc := "c/k8s/namespaces/ns/services/web"
 	dep := "c/k8s/namespaces/ns/deployments/web"
 	nodes := []node.Data{
-		testEdgeNode(svc, node.BgKindServiceDiscovery, "web",
-			"k8s.edge.exposes.inferred="+dep),
-		testEdgeNode(dep, node.BgKindWorkload, "web"),
+		testEdgeNode(svc, node.BgKindServiceDiscovery, "web", map[string]string{
+			"k8s.edge.exposes.inferred": dep,
+		}),
+		testEdgeNode(dep, node.BgKindWorkload, "web", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -480,9 +482,9 @@ func TestResolveEdgesFloorsCopiedFromSource(t *testing.T) {
 	res := NewEdgeResolver()
 	svc := "c/k8s/namespaces/ns/services/s"
 	dep := "c/k8s/namespaces/ns/deployments/s"
-	s := testEdgeNode(svc, node.BgKindServiceDiscovery, "s")
+	s := testEdgeNode(svc, node.BgKindServiceDiscovery, "s", nil)
 	s.Floor = 3
-	d := testEdgeNode(dep, node.BgKindWorkload, "s")
+	d := testEdgeNode(dep, node.BgKindWorkload, "s", nil)
 	d.Floor = 0
 	out, err := res.ResolveEdges(context.Background(), []node.Data{s, d})
 	if err != nil {
@@ -498,11 +500,11 @@ func TestResolveEdgesTagExplicitVsInferredSamePairProducesTwoEdges(t *testing.T)
 	a := "c/k8s/namespaces/ns/deployments/a"
 	b := "c/k8s/namespaces/ns/deployments/b"
 	nodes := []node.Data{
-		testEdgeNode(a, node.BgKindWorkload, "a",
-			"k8s.edge.calls="+b,
-			"k8s.edge.calls.inferred="+b,
-		),
-		testEdgeNode(b, node.BgKindWorkload, "b"),
+		testEdgeNode(a, node.BgKindWorkload, "a", map[string]string{
+			"k8s.edge.calls":          b,
+			"k8s.edge.calls.inferred": b,
+		}),
+		testEdgeNode(b, node.BgKindWorkload, "b", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {
@@ -529,11 +531,11 @@ func TestResolveEdgesEdgeIDContainsRelationForUniqueness(t *testing.T) {
 	src := "c/k8s/namespaces/ns/services/s"
 	tgt := "c/k8s/namespaces/ns/deployments/d"
 	nodes := []node.Data{
-		testEdgeNode(src, node.BgKindServiceDiscovery, "s",
-			"k8s.edge.exposes="+tgt,
-			"k8s.edge.calls="+tgt,
-		),
-		testEdgeNode(tgt, node.BgKindWorkload, "d"),
+		testEdgeNode(src, node.BgKindServiceDiscovery, "s", map[string]string{
+			"k8s.edge.exposes": tgt,
+			"k8s.edge.calls":   tgt,
+		}),
+		testEdgeNode(tgt, node.BgKindWorkload, "d", nil),
 	}
 	out, err := res.ResolveEdges(context.Background(), nodes)
 	if err != nil {

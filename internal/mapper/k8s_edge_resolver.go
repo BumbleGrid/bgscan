@@ -80,9 +80,8 @@ func edgesFromMetaTags(src *node.Data, byID map[string]node.Data, add func(sourc
 	if src == nil || src.Meta == nil {
 		return
 	}
-	for _, raw := range src.Meta.Tags {
-		key, targetID, ok := strings.Cut(raw, "=")
-		if !ok || key == "" || targetID == "" {
+	for key, targetID := range src.Meta.Tags {
+		if key == "" || targetID == "" {
 			continue
 		}
 		if !strings.HasPrefix(key, k8sEdgeTagPrefix) {
@@ -154,9 +153,8 @@ func tagsDeclareRelation(src node.Data, targetID string, wantRel edge.BgRelation
 	if src.Meta == nil {
 		return false
 	}
-	for _, raw := range src.Meta.Tags {
-		key, val, ok := strings.Cut(raw, "=")
-		if !ok || val != targetID {
+	for key, val := range src.Meta.Tags {
+		if val != targetID {
 			continue
 		}
 		if !strings.HasPrefix(key, k8sEdgeTagPrefix) {
