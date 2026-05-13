@@ -6,6 +6,7 @@ type Config struct {
 	Namespaces       []string
 	Output           string
 	ExtractorVersion string
+	WholeDocument    bool
 }
 
 func Load() (*Config, error) {

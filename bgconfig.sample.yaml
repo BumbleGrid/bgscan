@@ -2,7 +2,7 @@
 # or pass an explicit path: bgscan --config /path/to/bgconfig.yaml
 #
 # All keys below are required when using a config file (empty values are allowed
-# where noted). CLI flags override these values when set.
+# where noted), except whole_document which may be omitted (defaults to false).
 
 # Path to kubeconfig, or "" for default discovery (in-cluster, then ~/.kube/config).
 kubeconfig: ""
@@ -18,3 +18,7 @@ output: "-"
 
 # Stamped into node/edge meta.extractorVersion in the emitted document.
 extractor_version: "0.1.0"
+
+# When true, emit a full BGSpec root document (bgspec, document, floors 0–3).
+# When false (default), emit floor 0 only once that path is implemented.
+whole_document: false

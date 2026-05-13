@@ -24,6 +24,7 @@ type bgConfigFile struct {
 	Namespaces       []string `yaml:"namespaces"`
 	Output           string   `yaml:"output"`
 	ExtractorVersion string   `yaml:"extractor_version"`
+	WholeDocument    bool     `yaml:"whole_document"`
 }
 
 func LoadBGConfig(path string) (Config, error) {
@@ -50,6 +51,7 @@ func LoadBGConfig(path string) (Config, error) {
 		Namespaces:       parsed.Namespaces,
 		Output:           parsed.Output,
 		ExtractorVersion: parsed.ExtractorVersion,
+		WholeDocument:    parsed.WholeDocument,
 	}, nil
 }
 
