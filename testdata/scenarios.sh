@@ -2,7 +2,7 @@
 # Apply/delete predefined Kubernetes cluster scenarios on kind.
 #
 # Scenario layout:
-#   testing/scenarios/<scenario-name>/
+#   testdata/clusters/<scenario-name>/
 #     scenario.env             # required; defines cluster settings
 #     manifests/*.yaml         # default; resources to apply (see SCENARIO_MANIFESTS_DIR)
 #
@@ -18,7 +18,7 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly SCENARIOS_DIR="${SCRIPT_DIR}/scenarios"
+readonly SCENARIOS_DIR="${SCRIPT_DIR}/clusters"
 readonly PROVISION_SCRIPT="${SCRIPT_DIR}/provision-kind.sh"
 
 ACTION=""
