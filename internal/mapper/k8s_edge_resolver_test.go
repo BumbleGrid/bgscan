@@ -84,9 +84,6 @@ func TestResolveEdgesTagExplicitRoutes(t *testing.T) {
 	if got.ExtractionSource != edge.ExtractionSourceK8sManifest {
 		t.Fatalf("extractionSource %q", got.ExtractionSource)
 	}
-	if got.Style.Color != "" || got.Style.Width != 0 || got.Style.LineStyle != "" {
-		t.Fatalf("style should be zero: %+v", got.Style)
-	}
 	if got.Meta.ExtractorVersion != "1.0" {
 		t.Fatalf("meta %+v", got.Meta)
 	}

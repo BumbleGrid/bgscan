@@ -72,7 +72,6 @@ func edgeFromNodes(sourceID, targetID string, rel edge.BgRelation, inferred bool
 		BGRelation:       rel,
 		ExtractionSource: edge.ExtractionSourceK8sManifest,
 		Inferred:         inferred,
-		Style:            edge.Style{},
 		Meta:             em,
 	}
 }

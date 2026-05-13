@@ -71,10 +71,9 @@ type K8sNodeTranslator interface {
 }
 
 type K8sEdgeResolver interface {
-	// ResolveEdges emits edge.Data values from the assembled nodes; leave
-	// Style at its zero value for a later styling pass. Set Inferred to
-	// true for edges derived from label selector matching, and to false
-	// for edges grounded in explicit manifest references such as an
-	// Ingress rule backend or a PVC volumeName.
+	// ResolveEdges emits edge.Data values from the assembled nodes. Set
+	// Inferred to true for edges derived from label selector matching,
+	// and to false for edges grounded in explicit manifest references
+	// such as an Ingress rule backend or a PVC volumeName.
 	ResolveEdges(ctx context.Context, nodes []node.Data) ([]edge.Data, error)
 }
