@@ -4,4 +4,4 @@
 
 2. **Compile-time interface checks** — Do not add assertions such as `var _ SomeInterface = (*Concrete)(nil)`. Rely on normal assignment, tests, or the compiler at use sites instead.
 
-3. **Names** — Avoid single-letter identifiers (`i`, `n`, `c`, `s`, …), except for receiver variables. Prefer short but readable names that state role or content (`idx`, `count`, `client`, `spec`, …).
+3. **Names** — Avoid single-letter identifiers (`i`, `n`, `c`, `s`, …), except for receiver variables and well-established names such as `ctx` (context), `t` (test), `tt` (subtest), `w`/`r` (http writer/reader). Prefer short but readable names that state role or content (`idx`, `count`, `client`, `spec`, …).

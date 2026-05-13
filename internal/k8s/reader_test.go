@@ -13,19 +13,19 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestReader_unconfiguredReturnsError(test *testing.T) {
+func TestReader_unconfiguredReturnsError(t *testing.T) {
 	ctx := context.Background()
 	reader := NewReader(nil)
 	if _, err := reader.ListNamespaces(ctx); err == nil {
-		test.Fatal("expected error when client is nil")
+		t.Fatal("expected error when client is nil")
 	}
 	unconfigured := &Reader{}
 	if _, err := unconfigured.ListDeployments(ctx, "default"); err == nil {
-		test.Fatal("expected error when clientset is nil")
+		t.Fatal("expected error when clientset is nil")
 	}
 }
 
-func TestReader_listMethods_fakeClientset(test *testing.T) {
+func TestReader_listMethods_fakeClientset(t *testing.T) {
 	ctx := context.Background()
 	nsName := "demo"
 
@@ -83,148 +83,148 @@ func TestReader_listMethods_fakeClientset(test *testing.T) {
 
 	reader := NewReaderWithClientset(cs)
 
-	test.Run("ListNamespaces", func(sub *testing.T) {
+	t.Run("ListNamespaces", func(tt *testing.T) {
 		items, err := reader.ListNamespaces(ctx)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != nsName {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListPersistentVolumes", func(sub *testing.T) {
+	t.Run("ListPersistentVolumes", func(tt *testing.T) {
 		items, err := reader.ListPersistentVolumes(ctx)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "pv1" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListIngressClasses", func(sub *testing.T) {
+	t.Run("ListIngressClasses", func(tt *testing.T) {
 		items, err := reader.ListIngressClasses(ctx)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "public" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListDeployments", func(sub *testing.T) {
+	t.Run("ListDeployments", func(tt *testing.T) {
 		items, err := reader.ListDeployments(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "web" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListStatefulSets", func(sub *testing.T) {
+	t.Run("ListStatefulSets", func(tt *testing.T) {
 		items, err := reader.ListStatefulSets(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "db" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListDaemonSets", func(sub *testing.T) {
+	t.Run("ListDaemonSets", func(tt *testing.T) {
 		items, err := reader.ListDaemonSets(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "agent" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListReplicaSets", func(sub *testing.T) {
+	t.Run("ListReplicaSets", func(tt *testing.T) {
 		items, err := reader.ListReplicaSets(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "web-rs" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListCronJobs", func(sub *testing.T) {
+	t.Run("ListCronJobs", func(tt *testing.T) {
 		items, err := reader.ListCronJobs(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "tick" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListJobs", func(sub *testing.T) {
+	t.Run("ListJobs", func(tt *testing.T) {
 		items, err := reader.ListJobs(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "once" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListServices", func(sub *testing.T) {
+	t.Run("ListServices", func(tt *testing.T) {
 		items, err := reader.ListServices(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "api" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListIngresses", func(sub *testing.T) {
+	t.Run("ListIngresses", func(tt *testing.T) {
 		items, err := reader.ListIngresses(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "edge" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListConfigMaps", func(sub *testing.T) {
+	t.Run("ListConfigMaps", func(tt *testing.T) {
 		items, err := reader.ListConfigMaps(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "cfg" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListSecrets", func(sub *testing.T) {
+	t.Run("ListSecrets", func(tt *testing.T) {
 		items, err := reader.ListSecrets(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "tok" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListPersistentVolumeClaims", func(sub *testing.T) {
+	t.Run("ListPersistentVolumeClaims", func(tt *testing.T) {
 		items, err := reader.ListPersistentVolumeClaims(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "data" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListNetworkPolicies", func(sub *testing.T) {
+	t.Run("ListNetworkPolicies", func(tt *testing.T) {
 		items, err := reader.ListNetworkPolicies(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "default-deny" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
-	test.Run("ListHorizontalPodAutoscalersV2", func(sub *testing.T) {
+	t.Run("ListHorizontalPodAutoscalersV2", func(tt *testing.T) {
 		items, err := reader.ListHorizontalPodAutoscalersV2(ctx, nsName)
 		if err != nil {
-			sub.Fatal(err)
+			tt.Fatal(err)
 		}
 		if len(items) != 1 || items[0].Name != "web" {
-			sub.Fatalf("got %#v", items)
+			tt.Fatalf("got %#v", items)
 		}
 	})
 }
