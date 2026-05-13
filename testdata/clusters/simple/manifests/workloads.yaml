@@ -3,15 +3,25 @@ kind: Deployment
 metadata:
   name: api
   namespace: apps
+  labels:
+    env: test
+    scenario: simple
+    tier: api
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: api
+      env: test
+      scenario: simple
+      tier: api
   template:
     metadata:
       labels:
         app: api
+        env: test
+        scenario: simple
+        tier: api
     spec:
       containers:
         - name: api
@@ -27,6 +37,10 @@ kind: Service
 metadata:
   name: api
   namespace: apps
+  labels:
+    env: test
+    scenario: simple
+    tier: api
 spec:
   selector:
     app: api
@@ -39,15 +53,25 @@ kind: Deployment
 metadata:
   name: frontend
   namespace: apps
+  labels:
+    env: test
+    scenario: simple
+    tier: web
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: frontend
+      env: test
+      scenario: simple
+      tier: web
   template:
     metadata:
       labels:
         app: frontend
+        env: test
+        scenario: simple
+        tier: web
     spec:
       containers:
         - name: frontend
@@ -60,6 +84,10 @@ kind: Service
 metadata:
   name: frontend
   namespace: apps
+  labels:
+    env: test
+    scenario: simple
+    tier: web
 spec:
   selector:
     app: frontend
@@ -72,15 +100,25 @@ kind: Deployment
 metadata:
   name: redis
   namespace: data
+  labels:
+    env: test
+    scenario: simple
+    tier: cache
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: redis
+      env: test
+      scenario: simple
+      tier: cache
   template:
     metadata:
       labels:
         app: redis
+        env: test
+        scenario: simple
+        tier: cache
     spec:
       containers:
         - name: redis
@@ -93,6 +131,10 @@ kind: Service
 metadata:
   name: redis
   namespace: data
+  labels:
+    env: test
+    scenario: simple
+    tier: cache
 spec:
   selector:
     app: redis
@@ -105,15 +147,25 @@ kind: Deployment
 metadata:
   name: database
   namespace: data
+  labels:
+    env: test
+    scenario: simple
+    tier: data
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: database
+      env: test
+      scenario: simple
+      tier: data
   template:
     metadata:
       labels:
         app: database
+        env: test
+        scenario: simple
+        tier: data
     spec:
       containers:
         - name: database
@@ -133,6 +185,10 @@ kind: Service
 metadata:
   name: database
   namespace: data
+  labels:
+    env: test
+    scenario: simple
+    tier: data
 spec:
   selector:
     app: database

@@ -3,15 +3,28 @@ kind: Deployment
 metadata:
   name: users-api
   namespace: apps
+  labels:
+    env: test
+    scenario: complex
+    tier: api
+    domain: users
 spec:
   replicas: 2
   selector:
     matchLabels:
       app: users-api
+      env: test
+      scenario: complex
+      tier: api
+      domain: users
   template:
     metadata:
       labels:
         app: users-api
+        env: test
+        scenario: complex
+        tier: api
+        domain: users
     spec:
       containers:
         - name: users-api
@@ -27,15 +40,28 @@ kind: Deployment
 metadata:
   name: billing-api
   namespace: apps
+  labels:
+    env: test
+    scenario: complex
+    tier: api
+    domain: billing
 spec:
   replicas: 2
   selector:
     matchLabels:
       app: billing-api
+      env: test
+      scenario: complex
+      tier: api
+      domain: billing
   template:
     metadata:
       labels:
         app: billing-api
+        env: test
+        scenario: complex
+        tier: api
+        domain: billing
     spec:
       containers:
         - name: billing-api
@@ -51,15 +77,25 @@ kind: Deployment
 metadata:
   name: web-frontend
   namespace: apps
+  labels:
+    env: test
+    scenario: complex
+    tier: web
 spec:
   replicas: 2
   selector:
     matchLabels:
       app: web-frontend
+      env: test
+      scenario: complex
+      tier: web
   template:
     metadata:
       labels:
         app: web-frontend
+        env: test
+        scenario: complex
+        tier: web
     spec:
       containers:
         - name: web-frontend
@@ -72,6 +108,11 @@ kind: Service
 metadata:
   name: users-api
   namespace: apps
+  labels:
+    env: test
+    scenario: complex
+    tier: api
+    domain: users
 spec:
   selector:
     app: users-api
@@ -84,6 +125,11 @@ kind: Service
 metadata:
   name: billing-api
   namespace: apps
+  labels:
+    env: test
+    scenario: complex
+    tier: api
+    domain: billing
 spec:
   selector:
     app: billing-api
@@ -96,6 +142,10 @@ kind: Service
 metadata:
   name: web-frontend
   namespace: apps
+  labels:
+    env: test
+    scenario: complex
+    tier: web
 spec:
   selector:
     app: web-frontend
@@ -108,12 +158,23 @@ kind: CronJob
 metadata:
   name: billing-reconciliation
   namespace: jobs
+  labels:
+    env: test
+    scenario: complex
+    tier: batch
+    domain: billing
 spec:
   schedule: "*/10 * * * *"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            env: test
+            scenario: complex
+            tier: batch
+            domain: billing
         spec:
           restartPolicy: OnFailure
           containers:
@@ -129,16 +190,29 @@ kind: StatefulSet
 metadata:
   name: orders-db
   namespace: data
+  labels:
+    env: test
+    scenario: complex
+    tier: data
+    domain: orders
 spec:
   serviceName: orders-db
   replicas: 1
   selector:
     matchLabels:
       app: orders-db
+      env: test
+      scenario: complex
+      tier: data
+      domain: orders
   template:
     metadata:
       labels:
         app: orders-db
+        env: test
+        scenario: complex
+        tier: data
+        domain: orders
     spec:
       containers:
         - name: postgres
@@ -164,6 +238,11 @@ kind: Service
 metadata:
   name: orders-db
   namespace: data
+  labels:
+    env: test
+    scenario: complex
+    tier: data
+    domain: orders
 spec:
   selector:
     app: orders-db
@@ -176,16 +255,26 @@ kind: StatefulSet
 metadata:
   name: cache
   namespace: data
+  labels:
+    env: test
+    scenario: complex
+    tier: cache
 spec:
   serviceName: cache
   replicas: 1
   selector:
     matchLabels:
       app: cache
+      env: test
+      scenario: complex
+      tier: cache
   template:
     metadata:
       labels:
         app: cache
+        env: test
+        scenario: complex
+        tier: cache
     spec:
       containers:
         - name: redis
@@ -204,6 +293,10 @@ kind: Service
 metadata:
   name: cache
   namespace: data
+  labels:
+    env: test
+    scenario: complex
+    tier: cache
 spec:
   selector:
     app: cache
@@ -216,6 +309,10 @@ kind: Ingress
 metadata:
   name: app-gateway
   namespace: apps
+  labels:
+    env: test
+    scenario: complex
+    tier: gateway
 spec:
   rules:
     - host: app.local
