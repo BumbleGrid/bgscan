@@ -1,8 +1,3 @@
-// Package cmd defines the bgscan CLI surface.
-//
-// The root command wires together configuration loading, the Kubernetes
-// reader, the BGSpec mapper, and the output writer. Subcommands (when
-// added) live in this same package.
 package cmd
 
 import (
@@ -16,7 +11,6 @@ import (
 
 var cfg config.Config
 
-// configPath is set by --config; empty means "auto: bgconfig.yaml next to the binary if present".
 var configPath string
 
 var rootCmd = &cobra.Command{
@@ -32,25 +26,23 @@ bgspec.schema.json.`,
 		return applyBGConfig(cmd)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// TODO: wire cfg -> internal/k8s.Client -> internal/k8s.Reader
-		// -> internal/mapper -> internal/output.Writer.
 		return fmt.Errorf("scan pipeline not implemented yet")
 	},
 }
 
 func init() {
-	f := rootCmd.Flags()
-	f.StringVar(&configPath, "config", "",
+	flagSet := rootCmd.Flags()
+	flagSet.StringVar(&configPath, "config", "",
 		fmt.Sprintf("Path to %s (default: same directory as this binary, if that file exists)", config.BGConfigFileName))
-	f.StringVar(&cfg.Kubeconfig, "kubeconfig", "",
+	flagSet.StringVar(&cfg.Kubeconfig, "kubeconfig", "",
 		"Path to kubeconfig file (default: in-cluster, then ~/.kube/config)")
-	f.StringVar(&cfg.Context, "context", "",
+	flagSet.StringVar(&cfg.Context, "context", "",
 		"Kubeconfig context name (default: current context)")
-	f.StringSliceVar(&cfg.Namespaces, "namespaces", nil,
+	flagSet.StringSliceVar(&cfg.Namespaces, "namespaces", nil,
 		"Comma-separated namespaces to scan (default: all accessible)")
-	f.StringVarP(&cfg.Output, "output", "o", "-",
+	flagSet.StringVarP(&cfg.Output, "output", "o", "-",
 		`Output path for the BGSpec JSON document ("-" for stdout)`)
-	f.StringVar(&cfg.ExtractorVersion, "extractor-version", "0.1.0",
+	flagSet.StringVar(&cfg.ExtractorVersion, "extractor-version", "0.1.0",
 		"Value stamped into node/edge meta.extractorVersion")
 }
 
@@ -91,9 +83,6 @@ func applyBGConfig(cmd *cobra.Command) error {
 	return nil
 }
 
-// Execute runs the root command. It is the single entry point invoked
-// from main and is responsible for parsing flags, building the pipeline,
-// and surfacing exit codes.
 func Execute() {
 	if err := rootCmd.ExecuteContext(context.Background()); err != nil {
 		fmt.Fprintln(os.Stderr, err)

@@ -8,7 +8,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// BGConfigFileName is the default config filename searched next to the binary.
 const BGConfigFileName = "bgconfig.yaml"
 
 var requiredBGConfigKeys = []string{
@@ -27,8 +26,6 @@ type bgConfigFile struct {
 	ExtractorVersion string   `yaml:"extractor_version"`
 }
 
-// LoadBGConfig reads path, ensures every expected key is present in the document,
-// and returns a Config. Omitted keys are rejected even if YAML would treat them as zero.
 func LoadBGConfig(path string) (Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -38,27 +35,24 @@ func LoadBGConfig(path string) (Config, error) {
 	if err := yaml.Unmarshal(data, &raw); err != nil {
 		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
 	}
-	for _, k := range requiredBGConfigKeys {
-		if _, ok := raw[k]; !ok {
-			return Config{}, fmt.Errorf("bgconfig %s: missing required key %q (need all of: %v)", path, k, requiredBGConfigKeys)
+	for _, cfgKey := range requiredBGConfigKeys {
+		if _, ok := raw[cfgKey]; !ok {
+			return Config{}, fmt.Errorf("bgconfig %s: missing required key %q (need all of: %v)", path, cfgKey, requiredBGConfigKeys)
 		}
 	}
-	var f bgConfigFile
-	if err := yaml.Unmarshal(data, &f); err != nil {
+	var parsed bgConfigFile
+	if err := yaml.Unmarshal(data, &parsed); err != nil {
 		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
 	}
 	return Config{
-		Kubeconfig:       f.Kubeconfig,
-		Context:          f.Context,
-		Namespaces:       f.Namespaces,
-		Output:           f.Output,
-		ExtractorVersion: f.ExtractorVersion,
+		Kubeconfig:       parsed.Kubeconfig,
+		Context:          parsed.Context,
+		Namespaces:       parsed.Namespaces,
+		Output:           parsed.Output,
+		ExtractorVersion: parsed.ExtractorVersion,
 	}, nil
 }
 
-// ResolveBGConfigPath returns an explicit --config path unchanged, or the path
-// to BGConfigFileName beside the executable when that file exists. When no file
-// applies, it returns ("", nil).
 func ResolveBGConfigPath(explicit string) (string, error) {
 	if explicit != "" {
 		return filepath.Clean(explicit), nil
@@ -71,16 +65,16 @@ func ResolveBGConfigPath(explicit string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cand := filepath.Join(filepath.Dir(exe), BGConfigFileName)
-	st, err := os.Stat(cand)
+	candidate := filepath.Join(filepath.Dir(exe), BGConfigFileName)
+	fileInfo, err := os.Stat(candidate)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", nil
 		}
 		return "", err
 	}
-	if st.IsDir() {
+	if fileInfo.IsDir() {
 		return "", nil
 	}
-	return cand, nil
+	return candidate, nil
 }
