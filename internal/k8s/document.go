@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/BumbleGrid/bgbase/edge"
 	"github.com/BumbleGrid/bgbase/floor"
@@ -32,8 +33,8 @@ func NewBGSpecDocument(floor0 floor.Content) graph.BGSpecDocument {
 		BGSpec: defaultBGSpecVersion,
 		Document: graph.DocumentMeta{
 			Title:     "Kubernetes scan",
-			Company:   "",
-			UpdatedAt: "1970-01-01T00:00:00Z",
+			Company:   "Kubernetes",
+			UpdatedAt: time.Now().UTC().Format(time.RFC3339),
 		},
 		Floors: []floor.Content{
 			floor0,

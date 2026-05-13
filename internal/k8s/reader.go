@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/BumbleGrid/bgscan/internal/mapper"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
@@ -228,4 +229,37 @@ func (r *Reader) ListHorizontalPodAutoscalersV2(ctx context.Context, namespace s
 		return nil, err
 	}
 	return list.Items, nil
+}
+
+type namespacePickLister struct {
+	*Reader
+	allowed map[string]struct{}
+}
+
+// NewListerForNamespaces returns lister unchanged when namespaces is empty.
+// Otherwise ListNamespaces is restricted to those names (cluster-scoped lists
+// are unchanged).
+func NewListerForNamespaces(reader *Reader, namespaces []string) mapper.K8sLister {
+	if reader == nil || len(namespaces) == 0 {
+		return reader
+	}
+	allowed := make(map[string]struct{}, len(namespaces))
+	for idx := range namespaces {
+		allowed[namespaces[idx]] = struct{}{}
+	}
+	return &namespacePickLister{Reader: reader, allowed: allowed}
+}
+
+func (pick *namespacePickLister) ListNamespaces(ctx context.Context) ([]corev1.Namespace, error) {
+	all, err := pick.Reader.ListNamespaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var out []corev1.Namespace
+	for idx := range all {
+		if _, ok := pick.allowed[all[idx].Name]; ok {
+			out = append(out, all[idx])
+		}
+	}
+	return out, nil
 }

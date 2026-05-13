@@ -4,8 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/BumbleGrid/bgbase/floor"
+	"github.com/BumbleGrid/bgbase/graph"
+	"github.com/BumbleGrid/bgbase/node"
 	"github.com/BumbleGrid/bgscan/config"
+	"github.com/BumbleGrid/bgscan/internal/k8s"
+	"github.com/BumbleGrid/bgscan/internal/mapper"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +32,52 @@ bgspec.schema.json.`,
 		return applyBGConfig(cmd)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return fmt.Errorf("scan pipeline not implemented yet")
+		client, err := k8s.NewClient(cfg.Kubeconfig, cfg.Context)
+		if err != nil {
+			return err
+		}
+		reader := k8s.NewReader(client)
+		lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
+		trans := mapper.NewNodeTranslator()
+		res := mapper.NewEdgeResolver()
+		extractedAt := time.Now().UTC().Format(time.RFC3339)
+		tctx := mapper.K8sTranslateContext{
+			Floor:         0,
+			Meta:          node.Meta{ExtractorVersion: cfg.ExtractorVersion, ExtractedAt: extractedAt},
+			ClusterNodeID: "cluster/main",
+		}
+		content, err := k8s.Floor0Extractor(cmd.Context(), lister, trans, res, tctx)
+		if err != nil {
+			return err
+		}
+		if content.Label == "" {
+			content.Label = "Infrastructure"
+		}
+		if content.Description == "" {
+			content.Description = "Kubernetes cluster resources (Floor 0)."
+		}
+		content.Meta = &floor.BlockMeta{
+			ExtractedAt:      extractedAt,
+			ExtractorVersion: cfg.ExtractorVersion,
+		}
+		var payload []byte
+		if cfg.WholeDocument {
+			doc := k8s.NewBGSpecDocument(content)
+			payload, err = graph.MarshalBGSpecJSON(doc)
+		} else {
+			payload, err = graph.MarshalFloorContentJSON(content)
+		}
+		if err != nil {
+			return fmt.Errorf("marshal json: %w", err)
+		}
+		if cfg.Output == "" || cfg.Output == "-" {
+			if _, werr := os.Stdout.Write(payload); werr != nil {
+				return werr
+			}
+			_, werr := os.Stdout.Write([]byte("\n"))
+			return werr
+		}
+		return os.WriteFile(cfg.Output, payload, 0o644)
 	},
 }
 
@@ -44,6 +95,8 @@ func init() {
 		`Output path for the BGSpec JSON document ("-" for stdout)`)
 	flagSet.StringVar(&cfg.ExtractorVersion, "extractor-version", "0.1.0",
 		"Value stamped into node/edge meta.extractorVersion")
+	flagSet.BoolVar(&cfg.WholeDocument, "whole-document", false,
+		"Emit full BGSpec document (floors 0–3) instead of floor 0 slice only")
 }
 
 func applyBGConfig(cmd *cobra.Command) error {
@@ -79,6 +132,9 @@ func applyBGConfig(cmd *cobra.Command) error {
 	}
 	if !fs.Changed("extractor-version") {
 		cfg.ExtractorVersion = fileCfg.ExtractorVersion
+	}
+	if !fs.Changed("whole-document") {
+		cfg.WholeDocument = fileCfg.WholeDocument
 	}
 	return nil
 }
