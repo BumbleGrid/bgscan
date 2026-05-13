@@ -11,16 +11,16 @@
 // cluster-scoped (no namespace).
 package mapper
 
-// EdgeResolverImpl is the default EdgeResolver. It operates on the full
-// node slice produced by NodeMapper and emits one edge.Wrapper per
+// EdgeResolver is the default K8sEdgeResolver. It operates on the full
+// node slice produced by a K8sNodeTranslator and emits one edge.Data per
 // resolved relationship.
-type EdgeResolverImpl struct{}
+type EdgeResolver struct{}
 
-// NewEdgeResolver returns a ready-to-use EdgeResolverImpl.
-func NewEdgeResolver() *EdgeResolverImpl {
-	return &EdgeResolverImpl{}
+// NewEdgeResolver returns a ready-to-use EdgeResolver.
+func NewEdgeResolver() *EdgeResolver {
+	return &EdgeResolver{}
 }
 
 // TODO: implement ResolveEdges per the inference rules above, sourcing
 // hints from bgextract/document.K8sResolverHints attached to each node
-// during mapping.
+// during translation.

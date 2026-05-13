@@ -2,7 +2,7 @@
 //
 // This file owns the per-kind mappings (Deployment, StatefulSet, Service,
 // Ingress, ConfigMap, Secret, PVC, NetworkPolicy, HPA, Namespace, PV,
-// IngressClass, …) into node.Wrapper values from bgbase/node, populating
+// IngressClass, …) into node.Data values from bgbase/node, populating
 // the kubernetes block from bgextract/document (K8sNode, PortSpec, etc.).
 //
 // Source of truth for emitted shapes: bgspec/floor-0-node.json. Renderer
@@ -10,16 +10,16 @@
 // metadata (team, repo, tags, extractedAt) belongs under data.meta.
 package mapper
 
-// NodeMapperImpl is the default NodeMapper. It is stateless and safe to
-// reuse across scans; per-scan context (namespace scoping, extractor
-// version, timestamps) is passed in via method arguments.
-type NodeMapperImpl struct{}
+// NodeTranslator is the default K8sNodeTranslator. It is stateless and
+// safe to reuse across scans; per-scan context (namespace scoping,
+// extractor version, timestamps) is passed in via K8sTranslateContext.
+type NodeTranslator struct{}
 
-// NewNodeMapper returns a ready-to-use NodeMapperImpl.
-func NewNodeMapper() *NodeMapperImpl {
-	return &NodeMapperImpl{}
+// NewNodeTranslator returns a ready-to-use NodeTranslator.
+func NewNodeTranslator() *NodeTranslator {
+	return &NodeTranslator{}
 }
 
-// TODO: implement the Map* methods declared by NodeMapper, each returning
-// []node.Wrapper with bgKind, infraProvider="kubernetes", and a populated
-// data.k8s block.
+// TODO: implement the Translate* methods declared by K8sNodeTranslator,
+// each returning []node.Data with bgKind, infraProvider="kubernetes",
+// and a populated data.k8s block.
