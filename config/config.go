@@ -29,9 +29,9 @@ type Config struct {
 	ExtractorVersion string
 }
 
-// Load resolves a Config from CLI flags / env / file. The concrete
-// loader will be plumbed in once cmd/root wires its flag set.
+// Load is reserved for a single entry point that merges env and defaults.
+// Today, cmd applies bgconfig.yaml then CLI flags (see cmd.applyBGConfig).
 func Load() (*Config, error) {
-	// TODO: implement precedence (flags > env > file > defaults).
+	// TODO: env-based overrides if needed.
 	return &Config{}, nil
 }
