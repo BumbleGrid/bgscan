@@ -16,13 +16,30 @@ func k8sRESTID(clusterNodeID, restPath string) string {
 	return fmt.Sprintf("%s/k8s/%s", clusterNodeID, restPath)
 }
 
+func metaWithObjectLabels(base node.Meta, objectLabels map[string]string) *node.Meta {
+	if len(objectLabels) == 0 {
+		copyMeta := base
+		return &copyMeta
+	}
+	merged := base
+	tags := make(map[string]string, len(base.Tags)+len(objectLabels))
+	for key, val := range base.Tags {
+		tags[key] = val
+	}
+	for key, val := range objectLabels {
+		tags[key] = val
+	}
+	merged.Tags = tags
+	return &merged
+}
+
 func nodeFromK8s(
 	tctx K8sTranslateContext,
 	restPath, label string,
 	bgKind node.BgKind,
 	parent *string,
+	objectLabels map[string]string,
 ) node.Data {
-	metaCopy := tctx.Meta
 	return node.Data{
 		ID:            k8sRESTID(tctx.ClusterNodeID, restPath),
 		Label:         label,
@@ -30,7 +47,7 @@ func nodeFromK8s(
 		BgKind:        bgKind,
 		Parent:        parent,
 		InfraProvider: node.InfraProviderKubernetes,
-		Meta:          &metaCopy,
+		Meta:          metaWithObjectLabels(tctx.Meta, objectLabels),
 	}
 }
 
@@ -43,7 +60,7 @@ func (*NodeTranslator) TranslateNamespaces(ctx context.Context, tctx K8sTranslat
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s", item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindNamespace, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindNamespace, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -57,7 +74,7 @@ func (*NodeTranslator) TranslatePersistentVolumes(ctx context.Context, tctx K8sT
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("persistentvolumes/%s", item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindStorage, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindStorage, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -71,7 +88,7 @@ func (*NodeTranslator) TranslateIngressClasses(ctx context.Context, tctx K8sTran
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("ingressclasses/%s", item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindGateway, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindGateway, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -85,7 +102,7 @@ func (*NodeTranslator) TranslateDeployments(ctx context.Context, tctx K8sTransla
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/deployments/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -99,7 +116,7 @@ func (*NodeTranslator) TranslateStatefulSets(ctx context.Context, tctx K8sTransl
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/statefulsets/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -113,7 +130,7 @@ func (*NodeTranslator) TranslateDaemonSets(ctx context.Context, tctx K8sTranslat
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/daemonsets/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -127,7 +144,7 @@ func (*NodeTranslator) TranslateReplicaSets(ctx context.Context, tctx K8sTransla
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/replicasets/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -141,7 +158,7 @@ func (*NodeTranslator) TranslateCronJobs(ctx context.Context, tctx K8sTranslateC
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/cronjobs/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindJobRunner, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindJobRunner, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -155,7 +172,7 @@ func (*NodeTranslator) TranslateJobs(ctx context.Context, tctx K8sTranslateConte
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/jobs/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindJobRunner, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindJobRunner, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -180,7 +197,7 @@ func (*NodeTranslator) TranslateServices(ctx context.Context, tctx K8sTranslateC
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/services/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, serviceBgKind(&item), &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, serviceBgKind(&item), &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -194,7 +211,7 @@ func (*NodeTranslator) TranslateIngresses(ctx context.Context, tctx K8sTranslate
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/ingresses/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindGateway, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindGateway, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -208,7 +225,7 @@ func (*NodeTranslator) TranslateConfigMaps(ctx context.Context, tctx K8sTranslat
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/configmaps/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindConfigSource, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindConfigSource, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -222,7 +239,7 @@ func (*NodeTranslator) TranslateSecrets(ctx context.Context, tctx K8sTranslateCo
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/secrets/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindSecretSource, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindSecretSource, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -236,7 +253,7 @@ func (*NodeTranslator) TranslatePersistentVolumeClaims(ctx context.Context, tctx
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/persistentvolumeclaims/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindStorage, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindStorage, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -250,7 +267,7 @@ func (*NodeTranslator) TranslateNetworkPolicies(ctx context.Context, tctx K8sTra
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/networkpolicies/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindNetworkPolicy, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindNetworkPolicy, &parent, item.Labels))
 	}
 	return out, nil
 }
@@ -264,7 +281,7 @@ func (*NodeTranslator) TranslateHorizontalPodAutoscalersV2(ctx context.Context, 
 	for idx := range items {
 		item := items[idx]
 		restPath := fmt.Sprintf("namespaces/%s/horizontalpodautoscalers/%s", item.Namespace, item.Name)
-		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent))
+		out = append(out, nodeFromK8s(tctx, restPath, item.Name, node.BgKindWorkload, &parent, item.Labels))
 	}
 	return out, nil
 }

@@ -267,3 +267,74 @@ func TestK8sRESTID(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+func TestTranslateCronJobObjectLabelsBecomeMetaTags(t *testing.T) {
+	trans := NewNodeTranslator()
+	tctx := testK8sTranslateContext()
+	nodes, err := trans.TranslateCronJobs(context.Background(), tctx, []batchv1.CronJob{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "prod",
+				Name:      "tick",
+				Labels: map[string]string{
+					"env":      "test",
+					"domain":   "billing",
+					"scenario": "complex",
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("TranslateCronJobs: %v", err)
+	}
+	if len(nodes) != 1 {
+		t.Fatalf("len(nodes) = %d", len(nodes))
+	}
+	got := nodes[0]
+	if got.Meta == nil {
+		t.Fatal("Meta = nil")
+	}
+	if got.Meta.Tags["env"] != "test" || got.Meta.Tags["domain"] != "billing" {
+		t.Errorf("Tags = %#v", got.Meta.Tags)
+	}
+	if got.Meta.ExtractorVersion != "0.9.0" {
+		t.Errorf("ExtractorVersion = %q", got.Meta.ExtractorVersion)
+	}
+}
+
+func TestTranslateMergesContextMetaTagsWithObjectLabels(t *testing.T) {
+	trans := NewNodeTranslator()
+	tctx := testK8sTranslateContext()
+	tctx.Meta.Tags = map[string]string{
+		"from-context": "keep",
+		"overlap":      "ctx",
+	}
+	nodes, err := trans.TranslateDeployments(context.Background(), tctx, []appsv1.Deployment{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "prod",
+				Name:      "web",
+				Labels: map[string]string{
+					"overlap": "from-object",
+					"app":     "web",
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("TranslateDeployments: %v", err)
+	}
+	if len(nodes) != 1 {
+		t.Fatalf("len(nodes) = %d", len(nodes))
+	}
+	tags := nodes[0].Meta.Tags
+	if tags["from-context"] != "keep" {
+		t.Errorf("from-context = %q", tags["from-context"])
+	}
+	if tags["overlap"] != "from-object" {
+		t.Errorf("overlap = %q, want object label to win", tags["overlap"])
+	}
+	if tags["app"] != "web" {
+		t.Errorf("app = %q", tags["app"])
+	}
+}
