@@ -1,5 +1,10 @@
 package config
 
+const (
+	AutoArrangementDefault = "default"
+	AutoArrangementNone    = "none"
+)
+
 type Config struct {
 	Kubeconfig       string
 	Context          string
@@ -7,6 +12,7 @@ type Config struct {
 	Output           string
 	ExtractorVersion string
 	WholeDocument    bool
+	AutoArrangement  string
 }
 
 func Load() (*Config, error) {

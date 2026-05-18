@@ -59,9 +59,16 @@ bgspec.schema.json.`,
 			ExtractedAt:      extractedAt,
 			ExtractorVersion: cfg.ExtractorVersion,
 		}
+		if err := config.ValidateAutoArrangement(cfg); err != nil {
+			return err
+		}
 		var payload []byte
 		if cfg.WholeDocument {
 			doc := k8s.NewBGSpecDocument(content)
+			if config.AutoArrangementStyleMapEnabled(cfg) {
+				styleMap := floor.AutoArrangeStyleMap(content)
+				doc.StyleMap = &styleMap
+			}
 			payload, err = graph.MarshalBGSpecJSON(doc)
 		} else {
 			payload, err = graph.MarshalFloorContentJSON(content)
@@ -96,6 +103,8 @@ func init() {
 		"Value stamped into node/edge meta.extractorVersion")
 	flagSet.BoolVar(&cfg.WholeDocument, "whole-document", false,
 		"Emit full BGSpec document (floors 0–3) instead of floor 0 slice only")
+	flagSet.StringVar(&cfg.AutoArrangement, "auto-arrangement", config.AutoArrangementDefault,
+		`Node layout for whole-document output: "default" (auto grid) or "none" (omit styleMap); only with --whole-document`)
 }
 
 func applyBGConfig(cmd *cobra.Command) error {
@@ -134,6 +143,9 @@ func applyBGConfig(cmd *cobra.Command) error {
 	}
 	if !fs.Changed("whole-document") {
 		cfg.WholeDocument = fileCfg.WholeDocument
+	}
+	if !fs.Changed("auto-arrangement") {
+		cfg.AutoArrangement = fileCfg.AutoArrangement
 	}
 	return nil
 }

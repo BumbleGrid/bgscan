@@ -22,3 +22,8 @@ extractor_version: "0.1.0"
 # When true, emit a full BGSpec root document (bgspec, document, floors 0–3).
 # When false (default), emit floor 0 only once that path is implemented.
 whole_document: false
+
+# Node layout when whole_document is true: "default" (auto grid in styleMap) or
+# "none" (omit styleMap). Empty means "none". Requires whole_document: true when
+# set to "default".
+# auto_arrangement: default

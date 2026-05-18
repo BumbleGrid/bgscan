@@ -25,6 +25,7 @@ type bgConfigFile struct {
 	Output           string   `yaml:"output"`
 	ExtractorVersion string   `yaml:"extractor_version"`
 	WholeDocument    bool     `yaml:"whole_document"`
+	AutoArrangement  string   `yaml:"auto_arrangement"`
 }
 
 func LoadBGConfig(path string) (Config, error) {
@@ -52,6 +53,7 @@ func LoadBGConfig(path string) (Config, error) {
 		Output:           parsed.Output,
 		ExtractorVersion: parsed.ExtractorVersion,
 		WholeDocument:    parsed.WholeDocument,
+		AutoArrangement:  parsed.AutoArrangement,
 	}, nil
 }
 
