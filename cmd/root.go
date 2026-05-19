@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/BumbleGrid/bgbase/floor"
@@ -12,6 +14,7 @@ import (
 	"github.com/BumbleGrid/bgbase/scanner/k8s"
 	"github.com/BumbleGrid/bgscan/config"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var cfg config.Config
@@ -31,23 +34,45 @@ bgspec.schema.json.`,
 		return applyBGConfig(cmd)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := k8s.NewClient(cfg.Kubeconfig, cfg.Context)
+		kubeContexts, currentContext, err := loadKubeconfigContextNames(cfg.Kubeconfig)
 		if err != nil {
-			return err
+			return fmt.Errorf("load kubeconfig: %w", err)
 		}
-		reader := k8s.NewReader(client)
-		lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
+		scanContexts := resolveScanContexts(cfg.Context, currentContext, kubeContexts)
+		if len(scanContexts) == 0 {
+			return fmt.Errorf("no kubeconfig context to scan")
+		}
 		trans := k8s.NewNodeTranslator()
 		res := k8s.NewEdgeResolver()
 		extractedAt := time.Now().UTC().Format(time.RFC3339)
-		tctx := k8s.K8sTranslateContext{
-			Floor:         0,
-			Meta:          node.Meta{ExtractorVersion: cfg.ExtractorVersion, ExtractedAt: extractedAt},
-			ClusterNodeID: "cluster/main",
+		meta := node.Meta{ExtractorVersion: cfg.ExtractorVersion, ExtractedAt: extractedAt}
+		var content floor.Content
+		for _, scanContext := range scanContexts {
+			clusterNodeID := clusterNodeIDFromContext(scanContext)
+			client, err := k8s.NewClient(cfg.Kubeconfig, scanContext)
+			if err != nil {
+				return fmt.Errorf("context %q: %w", scanContext, err)
+			}
+			reader := k8s.NewReader(client)
+			lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
+			tctx := k8s.K8sTranslateContext{
+				Floor:         0,
+				Meta:          meta,
+				ClusterNodeID: clusterNodeID,
+			}
+			partial, err := k8s.Floor0Extractor(cmd.Context(), lister, trans, res, tctx)
+			if err != nil {
+				if len(scanContexts) > 1 {
+					fmt.Fprintf(os.Stderr, "bgscan: skipping context %q: %v\n", scanContext, err)
+					continue
+				}
+				return fmt.Errorf("context %q: %w", scanContext, err)
+			}
+			content.Nodes = append(content.Nodes, partial.Nodes...)
+			content.Edges = append(content.Edges, partial.Edges...)
 		}
-		content, err := k8s.Floor0Extractor(cmd.Context(), lister, trans, res, tctx)
-		if err != nil {
-			return err
+		if len(content.Nodes) == 0 {
+			return fmt.Errorf("no cluster data extracted from %d context(s)", len(scanContexts))
 		}
 		if content.Label == "" {
 			content.Label = "Infrastructure"
@@ -94,7 +119,7 @@ func init() {
 	flagSet.StringVar(&cfg.Kubeconfig, "kubeconfig", "",
 		"Path to kubeconfig file (default: in-cluster, then ~/.kube/config)")
 	flagSet.StringVar(&cfg.Context, "context", "",
-		"Kubeconfig context name (default: current context)")
+		"Kubeconfig context name (default: all kind-* contexts, or current context if none)")
 	flagSet.StringSliceVar(&cfg.Namespaces, "namespaces", nil,
 		"Comma-separated namespaces to scan (default: all accessible)")
 	flagSet.StringVarP(&cfg.Output, "output", "o", "-",
@@ -155,4 +180,53 @@ func Execute() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func loadKubeconfigContextNames(kubeconfigPath string) ([]string, string, error) {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if kubeconfigPath != "" {
+		loadingRules.ExplicitPath = kubeconfigPath
+	}
+	raw, err := loadingRules.Load()
+	if err != nil {
+		return nil, "", err
+	}
+	names := make([]string, 0, len(raw.Contexts))
+	for name := range raw.Contexts {
+		names = append(names, name)
+	}
+	return names, raw.CurrentContext, nil
+}
+
+func resolveScanContexts(explicit, current string, allNames []string) []string {
+	if explicit != "" {
+		return []string{explicit}
+	}
+	kindContexts := kindContextNames(allNames)
+	if len(kindContexts) > 0 {
+		return kindContexts
+	}
+	if current != "" {
+		return []string{current}
+	}
+	return nil
+}
+
+func kindContextNames(allNames []string) []string {
+	var names []string
+	for _, name := range allNames {
+		if strings.HasPrefix(name, "kind-") {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
+func clusterNodeIDFromContext(contextName string) string {
+	label := strings.TrimPrefix(contextName, "kind-")
+	if label == "" {
+		label = contextName
+	}
+	return "cluster/" + label
 }
