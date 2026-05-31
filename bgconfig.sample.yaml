@@ -27,3 +27,13 @@ whole_document: false
 # "none" (omit styleMap). Empty means "none". Requires whole_document: true when
 # set to "default".
 # auto_arrangement: default
+
+# Push mode — uncomment to send the extraction to a BumbleGrid backend.
+# output: push
+# endpoint: "https://api.bumblegrid.tech"
+# org: "paperpath-inc"
+# document: "payments-domain-infra-map"
+# cluster: "prod-eu-west-1"
+# api_key: "bg_sk_REPLACE_ME"
+# local_validate: true
+# idempotency: ""        # blank → derived from sha256 of the payload

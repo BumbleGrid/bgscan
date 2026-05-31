@@ -13,6 +13,7 @@ import (
 	"github.com/BumbleGrid/bgbase/node"
 	"github.com/BumbleGrid/bgbase/scanner/k8s"
 	"github.com/BumbleGrid/bgscan/config"
+	"github.com/BumbleGrid/bgscan/internal/push"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -20,6 +21,8 @@ import (
 var cfg config.Config
 
 var configPath string
+
+var pushDryRun bool
 
 var rootCmd = &cobra.Command{
 	Use:   "bgscan",
@@ -88,18 +91,23 @@ bgspec.schema.json.`,
 			return err
 		}
 		var payload []byte
+		var specDoc *graph.BGSpecDocument
 		if cfg.WholeDocument {
 			doc := k8s.NewBGSpecDocument(content)
 			if config.AutoArrangementStyleMapEnabled(cfg) {
 				styleMap := floor.AutoArrangeStyleMap(content)
 				doc.StyleMap = &styleMap
 			}
+			specDoc = &doc
 			payload, err = graph.MarshalBGSpecJSON(doc)
 		} else {
 			payload, err = graph.MarshalFloorContentJSON(content)
 		}
 		if err != nil {
 			return fmt.Errorf("marshal json: %w", err)
+		}
+		if cfg.Output == config.OutputPush {
+			return runPushMode(cmd.Context(), cfg, pushDryRun, payload, content, specDoc, os.Stderr, push.NewHTTPPusher(nil))
 		}
 		if cfg.Output == "" || cfg.Output == "-" {
 			if _, werr := os.Stdout.Write(payload); werr != nil {
@@ -130,6 +138,13 @@ func init() {
 		"Emit full BGSpec document (floors 0–3) instead of floor 0 slice only")
 	flagSet.StringVar(&cfg.AutoArrangement, "auto-arrangement", config.AutoArrangementDefault,
 		`Node layout for whole-document output: "default" (auto grid) or "none" (omit styleMap); only with --whole-document`)
+	flagSet.StringVar(&cfg.Endpoint, "endpoint", "", "Backend endpoint URL (push mode)")
+	flagSet.StringVar(&cfg.Org, "org", "", "Organization slug (push mode)")
+	flagSet.StringVar(&cfg.Document, "document", "", "Document slug (push mode)")
+	flagSet.StringVar(&cfg.Cluster, "cluster", "", "Cluster slug (push mode)")
+	flagSet.StringVar(&cfg.APIKey, "api-key", "", "Bearer API key, format bg_sk_* (push mode)")
+	flagSet.StringVar(&cfg.Idempotency, "idempotency", "", "Idempotency-Key header (defaults to content-hash)")
+	flagSet.BoolVar(&pushDryRun, "push-dry-run", false, "Resolve and print the push request without sending it")
 }
 
 func applyBGConfig(cmd *cobra.Command) error {
@@ -171,6 +186,24 @@ func applyBGConfig(cmd *cobra.Command) error {
 	}
 	if !fs.Changed("auto-arrangement") {
 		cfg.AutoArrangement = fileCfg.AutoArrangement
+	}
+	if !fs.Changed("endpoint") {
+		cfg.Endpoint = fileCfg.Endpoint
+	}
+	if !fs.Changed("org") {
+		cfg.Org = fileCfg.Org
+	}
+	if !fs.Changed("document") {
+		cfg.Document = fileCfg.Document
+	}
+	if !fs.Changed("cluster") {
+		cfg.Cluster = fileCfg.Cluster
+	}
+	if !fs.Changed("api-key") {
+		cfg.APIKey = fileCfg.APIKey
+	}
+	if !fs.Changed("idempotency") {
+		cfg.Idempotency = fileCfg.Idempotency
 	}
 	return nil
 }

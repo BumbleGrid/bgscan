@@ -26,6 +26,14 @@ type bgConfigFile struct {
 	ExtractorVersion string   `yaml:"extractor_version"`
 	WholeDocument    bool     `yaml:"whole_document"`
 	AutoArrangement  string   `yaml:"auto_arrangement"`
+
+	Endpoint      string `yaml:"endpoint"`
+	Org           string `yaml:"org"`
+	Document      string `yaml:"document"`
+	Cluster       string `yaml:"cluster"`
+	APIKey        string `yaml:"api_key"`
+	Idempotency   string `yaml:"idempotency"`
+	LocalValidate *bool  `yaml:"local_validate"`
 }
 
 func LoadBGConfig(path string) (Config, error) {
@@ -46,7 +54,11 @@ func LoadBGConfig(path string) (Config, error) {
 	if err := yaml.Unmarshal(data, &parsed); err != nil {
 		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
 	}
-	return Config{
+	localValidate := parsed.LocalValidate != nil && *parsed.LocalValidate
+	if parsed.Output == OutputPush && parsed.LocalValidate == nil {
+		localValidate = true
+	}
+	cfg := Config{
 		Kubeconfig:       parsed.Kubeconfig,
 		Context:          parsed.Context,
 		Namespaces:       parsed.Namespaces,
@@ -54,7 +66,18 @@ func LoadBGConfig(path string) (Config, error) {
 		ExtractorVersion: parsed.ExtractorVersion,
 		WholeDocument:    parsed.WholeDocument,
 		AutoArrangement:  parsed.AutoArrangement,
-	}, nil
+		Endpoint:         parsed.Endpoint,
+		Org:              parsed.Org,
+		Document:         parsed.Document,
+		Cluster:          parsed.Cluster,
+		APIKey:           parsed.APIKey,
+		Idempotency:      parsed.Idempotency,
+		LocalValidate:    localValidate,
+	}
+	if err := ValidatePushConfig(cfg); err != nil {
+		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
+	}
+	return cfg, nil
 }
 
 func ResolveBGConfigPath(explicit string) (string, error) {

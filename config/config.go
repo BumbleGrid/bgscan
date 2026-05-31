@@ -3,6 +3,8 @@ package config
 const (
 	AutoArrangementDefault = "default"
 	AutoArrangementNone    = "none"
+
+	OutputPush = "push"
 )
 
 type Config struct {
@@ -13,6 +15,14 @@ type Config struct {
 	ExtractorVersion string
 	WholeDocument    bool
 	AutoArrangement  string
+
+	Endpoint      string
+	Org           string
+	Document      string
+	Cluster       string
+	APIKey        string
+	Idempotency   string
+	LocalValidate bool
 }
 
 func Load() (*Config, error) {
