@@ -2,3 +2,4 @@
 bgconfig.yaml
 testdata/.kind-*
 .cursor
+bgscan.yaml
