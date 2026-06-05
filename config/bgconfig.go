@@ -30,7 +30,6 @@ type bgConfigFile struct {
 	Endpoint      string `yaml:"endpoint"`
 	Org           string `yaml:"org"`
 	Document      string `yaml:"document"`
-	Cluster       string `yaml:"cluster"`
 	APIKey        string `yaml:"api_key"`
 	Idempotency   string `yaml:"idempotency"`
 	LocalValidate *bool  `yaml:"local_validate"`
@@ -49,6 +48,10 @@ func LoadBGConfig(path string) (Config, error) {
 		if _, ok := raw[cfgKey]; !ok {
 			return Config{}, fmt.Errorf("bgconfig %s: missing required key %q (need all of: %v)", path, cfgKey, requiredBGConfigKeys)
 		}
+	}
+	clusterSlug, err := clusterSlugFromRaw(raw)
+	if err != nil {
+		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
 	}
 	var parsed bgConfigFile
 	if err := yaml.Unmarshal(data, &parsed); err != nil {
@@ -69,7 +72,7 @@ func LoadBGConfig(path string) (Config, error) {
 		Endpoint:         parsed.Endpoint,
 		Org:              parsed.Org,
 		Document:         parsed.Document,
-		Cluster:          parsed.Cluster,
+		Cluster:          clusterSlug,
 		APIKey:           parsed.APIKey,
 		Idempotency:      parsed.Idempotency,
 		LocalValidate:    localValidate,
@@ -78,6 +81,27 @@ func LoadBGConfig(path string) (Config, error) {
 		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
 	}
 	return cfg, nil
+}
+
+func clusterSlugFromRaw(raw map[string]interface{}) (string, error) {
+	value, ok := raw["cluster"]
+	if !ok {
+		return "", nil
+	}
+	switch typed := value.(type) {
+	case string:
+		return typed, nil
+	case map[interface{}]interface{}:
+		if slug, ok := typed["slug"].(string); ok && slug != "" {
+			return slug, nil
+		}
+		if name, ok := typed["name"].(string); ok && name != "" {
+			return name, nil
+		}
+		return "", fmt.Errorf("cluster map missing slug and name")
+	default:
+		return "", fmt.Errorf("cluster has unsupported type %T", value)
+	}
 }
 
 func ResolveBGConfigPath(explicit string) (string, error) {

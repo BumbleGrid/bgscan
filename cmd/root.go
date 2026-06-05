@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -42,19 +43,24 @@ bgspec.schema.json.`,
 			return fmt.Errorf("load kubeconfig: %w", err)
 		}
 		scanContexts := resolveScanContexts(cfg.Context, currentContext, kubeContexts)
+		if cfg.Context == "" {
+			scanContexts = filterReachableContexts(cmd.Context(), cfg.Kubeconfig, scanContexts)
+		}
 		if len(scanContexts) == 0 {
-			return fmt.Errorf("no kubeconfig context to scan")
+			return fmt.Errorf("no reachable kubeconfig context to scan")
 		}
 		trans := k8s.NewNodeTranslator()
 		res := k8s.NewEdgeResolver()
 		extractedAt := time.Now().UTC().Format(time.RFC3339)
 		meta := node.Meta{ExtractorVersion: cfg.ExtractorVersion, ExtractedAt: extractedAt}
 		var content floor.Content
+		var extractErrors []error
 		for _, scanContext := range scanContexts {
 			clusterNodeID := clusterNodeIDFromContext(scanContext)
 			client, err := k8s.NewClient(cfg.Kubeconfig, scanContext)
 			if err != nil {
-				return fmt.Errorf("context %q: %w", scanContext, err)
+				extractErrors = append(extractErrors, fmt.Errorf("context %q: %w", scanContext, err))
+				continue
 			}
 			reader := k8s.NewReader(client)
 			lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
@@ -65,14 +71,15 @@ bgspec.schema.json.`,
 			}
 			partial, err := k8s.Floor0Extractor(cmd.Context(), lister, trans, res, tctx)
 			if err != nil {
-				if len(scanContexts) > 1 {
-					fmt.Fprintf(os.Stderr, "bgscan: skipping context %q: %v\n", scanContext, err)
-					continue
-				}
-				return fmt.Errorf("context %q: %w", scanContext, err)
+				extractErrors = append(extractErrors, fmt.Errorf("context %q: %w", scanContext, err))
+				continue
 			}
 			content.Nodes = append(content.Nodes, partial.Nodes...)
 			content.Edges = append(content.Edges, partial.Edges...)
+		}
+		if len(extractErrors) > 0 {
+			return fmt.Errorf("kubernetes extraction failed for %d of %d context(s): %w",
+				len(extractErrors), len(scanContexts), errors.Join(extractErrors...))
 		}
 		if len(content.Nodes) == 0 {
 			return fmt.Errorf("no cluster data extracted from %d context(s)", len(scanContexts))
@@ -262,4 +269,26 @@ func clusterNodeIDFromContext(contextName string) string {
 		label = contextName
 	}
 	return "cluster/" + label
+}
+
+func filterReachableContexts(ctx context.Context, kubeconfig string, contexts []string) []string {
+	reachable := make([]string, 0, len(contexts))
+	for _, scanContext := range contexts {
+		if kubeContextReachable(ctx, kubeconfig, scanContext) {
+			reachable = append(reachable, scanContext)
+			continue
+		}
+		fmt.Fprintf(os.Stderr, "bgscan: ignoring unreachable context %q\n", scanContext)
+	}
+	return reachable
+}
+
+func kubeContextReachable(ctx context.Context, kubeconfig, scanContext string) bool {
+	client, err := k8s.NewClient(kubeconfig, scanContext)
+	if err != nil {
+		return false
+	}
+	reader := k8s.NewReader(client)
+	_, err = reader.ListNamespaces(ctx)
+	return err == nil
 }

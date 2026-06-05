@@ -5,7 +5,7 @@
 # where noted), except whole_document which may be omitted (defaults to false).
 
 # Path to kubeconfig, or "" for default discovery (in-cluster, then ~/.kube/config).
-kubeconfig: ""
+kubeconfig: " ~/.kube/config"
 
 # Kubeconfig context name, or "" for current-context.
 context: ""
