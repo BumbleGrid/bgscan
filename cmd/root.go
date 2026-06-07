@@ -212,6 +212,7 @@ func applyBGConfig(cmd *cobra.Command) error {
 	if !fs.Changed("idempotency") {
 		cfg.Idempotency = fileCfg.Idempotency
 	}
+	cfg.LocalValidate = fileCfg.LocalValidate
 	return nil
 }
 

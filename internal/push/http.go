@@ -148,17 +148,22 @@ func parseResponse(resp *http.Response) (PushResult, *PushError, bool, error) {
 		var envelope struct {
 			ErrorCode string `json:"error_code"`
 			Data      struct {
-				Message string `json:"message"`
+				Message      string `json:"message"`
+				ErrorMessage string `json:"error_message"`
 			} `json:"data"`
 		}
 		if err := json.Unmarshal(body, &envelope); err != nil {
 			return PushResult{}, nil, retriable,
 				fmt.Errorf("decode error envelope: %w (status=%d body=%.200q)", err, resp.StatusCode, body)
 		}
+		errMsg := envelope.Data.Message
+		if errMsg == "" {
+			errMsg = envelope.Data.ErrorMessage
+		}
 		return PushResult{}, &PushError{
 			HTTPStatus: resp.StatusCode,
 			Code:       envelope.ErrorCode,
-			Message:    envelope.Data.Message,
+			Message:    errMsg,
 			Retriable:  retriable,
 		}, retriable, nil
 	}
