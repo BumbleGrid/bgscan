@@ -33,6 +33,7 @@ type bgConfigFile struct {
 	APIKey        string `yaml:"api_key"`
 	Idempotency   string `yaml:"idempotency"`
 	LocalValidate *bool  `yaml:"local_validate"`
+	LocalOutput   string `yaml:"local_output"`
 }
 
 func LoadBGConfig(path string) (Config, error) {
@@ -76,6 +77,7 @@ func LoadBGConfig(path string) (Config, error) {
 		APIKey:           parsed.APIKey,
 		Idempotency:      parsed.Idempotency,
 		LocalValidate:    localValidate,
+		LocalOutput:      parsed.LocalOutput,
 	}
 	if err := ValidatePushConfig(cfg); err != nil {
 		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)

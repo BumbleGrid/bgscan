@@ -23,6 +23,7 @@ type Config struct {
 	APIKey        string
 	Idempotency   string
 	LocalValidate bool
+	LocalOutput   string
 }
 
 func Load() (*Config, error) {

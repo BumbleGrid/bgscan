@@ -3,7 +3,7 @@ module github.com/BumbleGrid/bgscan
 go 1.22.2
 
 require (
-	github.com/BumbleGrid/bgbase v0.0.0-00010101000000-000000000000
+	github.com/BumbleGrid/bgbase v0.0.1-beta.1
 	github.com/spf13/cobra v1.8.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/client-go v0.29.3
@@ -50,7 +50,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-// Use the sibling working tree at /home/rubens/project/bumblegrid/bgbase
-// instead of fetching from a remote.
-replace github.com/BumbleGrid/bgbase => ../bgbase

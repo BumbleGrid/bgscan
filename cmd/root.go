@@ -43,10 +43,14 @@ bgspec.schema.json.`,
 			return fmt.Errorf("load kubeconfig: %w", err)
 		}
 		scanContexts := resolveScanContexts(cfg.Context, currentContext, kubeContexts)
+		var unreachable []unreachableContext
 		if cfg.Context == "" {
-			scanContexts = filterReachableContexts(cmd.Context(), cfg.Kubeconfig, scanContexts)
+			scanContexts, unreachable = filterReachableContexts(cmd.Context(), cfg.Kubeconfig, scanContexts)
 		}
 		if len(scanContexts) == 0 {
+			if allLocalhostConnectionRefused(unreachable) {
+				return fmt.Errorf("no reachable kubeconfig context to scan: cluster API servers use localhost addresses (127.0.0.1) that are not reachable from inside a Docker container; on Linux use docker run --network host")
+			}
 			return fmt.Errorf("no reachable kubeconfig context to scan")
 		}
 		trans := k8s.NewNodeTranslator()
@@ -113,6 +117,9 @@ bgspec.schema.json.`,
 		if err != nil {
 			return fmt.Errorf("marshal json: %w", err)
 		}
+		if err := writeLocalOutput(cfg.LocalOutput, payload); err != nil {
+			return err
+		}
 		if cfg.Output == config.OutputPush {
 			return runPushMode(cmd.Context(), cfg, pushDryRun, payload, content, specDoc, os.Stderr, push.NewHTTPPusher(nil))
 		}
@@ -152,6 +159,18 @@ func init() {
 	flagSet.StringVar(&cfg.APIKey, "api-key", "", "Bearer API key, format bg_sk_* (push mode)")
 	flagSet.StringVar(&cfg.Idempotency, "idempotency", "", "Idempotency-Key header (defaults to content-hash)")
 	flagSet.BoolVar(&pushDryRun, "push-dry-run", false, "Resolve and print the push request without sending it")
+	flagSet.StringVar(&cfg.LocalOutput, "local-output", "",
+		"Also write the BGSpec JSON to this path (works with output: push)")
+}
+
+func writeLocalOutput(path string, payload []byte) error {
+	if path == "" {
+		return nil
+	}
+	if err := os.WriteFile(path, payload, 0o644); err != nil {
+		return fmt.Errorf("write local output %q: %w", path, err)
+	}
+	return nil
 }
 
 func applyBGConfig(cmd *cobra.Command) error {
@@ -211,6 +230,9 @@ func applyBGConfig(cmd *cobra.Command) error {
 	}
 	if !fs.Changed("idempotency") {
 		cfg.Idempotency = fileCfg.Idempotency
+	}
+	if !fs.Changed("local-output") {
+		cfg.LocalOutput = fileCfg.LocalOutput
 	}
 	cfg.LocalValidate = fileCfg.LocalValidate
 	return nil
@@ -272,24 +294,95 @@ func clusterNodeIDFromContext(contextName string) string {
 	return "cluster/" + label
 }
 
-func filterReachableContexts(ctx context.Context, kubeconfig string, contexts []string) []string {
+type unreachableContext struct {
+	name      string
+	serverURL string
+	reason    string
+}
+
+func filterReachableContexts(ctx context.Context, kubeconfig string, contexts []string) ([]string, []unreachableContext) {
 	reachable := make([]string, 0, len(contexts))
+	var unreachable []unreachableContext
 	for _, scanContext := range contexts {
-		if kubeContextReachable(ctx, kubeconfig, scanContext) {
+		reachErr := kubeContextReachable(ctx, kubeconfig, scanContext)
+		if reachErr == nil {
 			reachable = append(reachable, scanContext)
 			continue
 		}
+		serverURL := clusterServerURL(kubeconfig, scanContext)
+		unreachable = append(unreachable, unreachableContext{
+			name:      scanContext,
+			serverURL: serverURL,
+			reason:    reachErr.Error(),
+		})
 		fmt.Fprintf(os.Stderr, "bgscan: ignoring unreachable context %q\n", scanContext)
 	}
-	return reachable
+	return reachable, unreachable
 }
 
-func kubeContextReachable(ctx context.Context, kubeconfig, scanContext string) bool {
-	client, err := k8s.NewClient(kubeconfig, scanContext)
-	if err != nil {
+func allLocalhostConnectionRefused(unreachable []unreachableContext) bool {
+	if len(unreachable) == 0 {
 		return false
 	}
+	for _, entry := range unreachable {
+		if !strings.Contains(entry.serverURL, "127.0.0.1") && !strings.Contains(entry.serverURL, "localhost") {
+			return false
+		}
+		if !strings.Contains(entry.reason, "connection refused") {
+			return false
+		}
+	}
+	return true
+}
+
+func kubeContextReachable(ctx context.Context, kubeconfig, scanContext string) error {
+	client, err := k8s.NewClient(kubeconfig, scanContext)
+	if err != nil {
+		return err
+	}
 	reader := k8s.NewReader(client)
-	_, err = reader.ListNamespaces(ctx)
-	return err == nil
+	_, listErr := reader.ListNamespaces(ctx)
+	return listErr
+}
+
+func clusterServerURL(kubeconfigPath, contextName string) string {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if kubeconfigPath != "" {
+		loadingRules.ExplicitPath = kubeconfigPath
+	}
+	raw, err := loadingRules.Load()
+	if err != nil {
+		return ""
+	}
+	ctxCfg, ok := raw.Contexts[contextName]
+	if !ok || ctxCfg == nil {
+		return ""
+	}
+	cluster, ok := raw.Clusters[ctxCfg.Cluster]
+	if !ok || cluster == nil {
+		return ""
+	}
+	return cluster.Server
+}
+
+func agentDebugLog(hypothesisID, location, message string, data map[string]any) {
+	const logPath = "/home/rubens/project/bumblegrid/monorepo/.cursor/debug-a042bf.log"
+	payload := map[string]any{
+		"sessionId":    "a042bf",
+		"hypothesisId": hypothesisID,
+		"location":     location,
+		"message":      message,
+		"data":         data,
+		"timestamp":    time.Now().UnixMilli(),
+	}
+	line, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
+	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	_, _ = file.Write(append(line, '\n'))
 }

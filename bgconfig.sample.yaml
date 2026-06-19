@@ -36,4 +36,5 @@ whole_document: false
 # cluster: "prod-eu-west-1"
 # api_key: "bg_sk_REPLACE_ME"
 # local_validate: true
+# local_output: "/output/bgdoc.json"   # optional; save a copy while pushing
 # idempotency: ""        # blank → derived from sha256 of the payload
