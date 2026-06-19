@@ -1,0 +1,1447 @@
+{
+  "floor": 0,
+  "label": "Infrastructure",
+  "description": "Kubernetes cluster resources (Floor 0).",
+  "nodes": [
+    {
+      "data": {
+        "id": "cluster/complex",
+        "label": "complex",
+        "floor": 0,
+        "bgKind": "Cluster",
+        "infraProvider": "manual",
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps",
+        "label": "apps",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "apps",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "apps"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "apps"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "apps",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/deployments/billing-api",
+        "label": "billing-api",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Deployment",
+          "name": "billing-api",
+          "namespace": "apps",
+          "labels": {
+            "domain": "billing",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "api"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/revision": "1",
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"domain\":\"billing\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"api\"},\"name\":\"billing-api\",\"namespace\":\"apps\"},\"spec\":{\"replicas\":2,\"selector\":{\"matchLabels\":{\"app\":\"billing-api\",\"domain\":\"billing\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"api\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"billing-api\",\"domain\":\"billing\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"api\"}},\"spec\":{\"containers\":[{\"args\":[\"-listen=:5678\",\"-text=billing api\"],\"image\":\"hashicorp/http-echo:1.0.0\",\"name\":\"billing-api\",\"ports\":[{\"containerPort\":5678}]}]}}}}\n"
+          },
+          "replicas": 2,
+          "image": "hashicorp/http-echo:1.0.0"
+        },
+        "meta": {
+          "tags": {
+            "domain": "billing",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "api"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/deployments/users-api",
+        "label": "users-api",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Deployment",
+          "name": "users-api",
+          "namespace": "apps",
+          "labels": {
+            "domain": "users",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "api"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/revision": "1",
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"domain\":\"users\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"api\"},\"name\":\"users-api\",\"namespace\":\"apps\"},\"spec\":{\"replicas\":2,\"selector\":{\"matchLabels\":{\"app\":\"users-api\",\"domain\":\"users\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"api\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"users-api\",\"domain\":\"users\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"api\"}},\"spec\":{\"containers\":[{\"args\":[\"-listen=:5678\",\"-text=users api\"],\"image\":\"hashicorp/http-echo:1.0.0\",\"name\":\"users-api\",\"ports\":[{\"containerPort\":5678}]}]}}}}\n"
+          },
+          "replicas": 2,
+          "image": "hashicorp/http-echo:1.0.0"
+        },
+        "meta": {
+          "tags": {
+            "domain": "users",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "api"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/deployments/web-frontend",
+        "label": "web-frontend",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Deployment",
+          "name": "web-frontend",
+          "namespace": "apps",
+          "labels": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "web"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/revision": "1",
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"web\"},\"name\":\"web-frontend\",\"namespace\":\"apps\"},\"spec\":{\"replicas\":2,\"selector\":{\"matchLabels\":{\"app\":\"web-frontend\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"web\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"web-frontend\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"web\"}},\"spec\":{\"containers\":[{\"image\":\"nginxdemos/hello:plain-text\",\"name\":\"web-frontend\",\"ports\":[{\"containerPort\":80}]}]}}}}\n"
+          },
+          "replicas": 2,
+          "image": "nginxdemos/hello:plain-text"
+        },
+        "meta": {
+          "tags": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "web"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/ingresses/app-gateway",
+        "label": "app-gateway",
+        "floor": 0,
+        "bgKind": "Gateway",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Ingress",
+          "name": "app-gateway",
+          "namespace": "apps",
+          "labels": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "gateway"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"Ingress\",\"metadata\":{\"annotations\":{},\"labels\":{\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"gateway\"},\"name\":\"app-gateway\",\"namespace\":\"apps\"},\"spec\":{\"rules\":[{\"host\":\"app.local\",\"http\":{\"paths\":[{\"backend\":{\"service\":{\"name\":\"users-api\",\"port\":{\"number\":80}}},\"path\":\"/users\",\"pathType\":\"Prefix\"},{\"backend\":{\"service\":{\"name\":\"billing-api\",\"port\":{\"number\":80}}},\"path\":\"/billing\",\"pathType\":\"Prefix\"},{\"backend\":{\"service\":{\"name\":\"web-frontend\",\"port\":{\"number\":80}}},\"path\":\"/\",\"pathType\":\"Prefix\"}]}}]}}\n"
+          }
+        },
+        "meta": {
+          "tags": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "gateway"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/replicasets/billing-api-76cfb48b55",
+        "label": "billing-api-76cfb48b55",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ReplicaSet",
+          "name": "billing-api-76cfb48b55",
+          "namespace": "apps",
+          "labels": {
+            "app": "billing-api",
+            "domain": "billing",
+            "env": "test",
+            "pod-template-hash": "76cfb48b55",
+            "scenario": "complex",
+            "tier": "api"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/desired-replicas": "2",
+            "deployment.kubernetes.io/max-replicas": "3",
+            "deployment.kubernetes.io/revision": "1"
+          },
+          "replicas": 2,
+          "image": "hashicorp/http-echo:1.0.0"
+        },
+        "meta": {
+          "tags": {
+            "app": "billing-api",
+            "domain": "billing",
+            "env": "test",
+            "pod-template-hash": "76cfb48b55",
+            "scenario": "complex",
+            "tier": "api"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/replicasets/users-api-c8cf5c67c",
+        "label": "users-api-c8cf5c67c",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ReplicaSet",
+          "name": "users-api-c8cf5c67c",
+          "namespace": "apps",
+          "labels": {
+            "app": "users-api",
+            "domain": "users",
+            "env": "test",
+            "pod-template-hash": "c8cf5c67c",
+            "scenario": "complex",
+            "tier": "api"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/desired-replicas": "2",
+            "deployment.kubernetes.io/max-replicas": "3",
+            "deployment.kubernetes.io/revision": "1"
+          },
+          "replicas": 2,
+          "image": "hashicorp/http-echo:1.0.0"
+        },
+        "meta": {
+          "tags": {
+            "app": "users-api",
+            "domain": "users",
+            "env": "test",
+            "pod-template-hash": "c8cf5c67c",
+            "scenario": "complex",
+            "tier": "api"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/replicasets/web-frontend-799fb58d68",
+        "label": "web-frontend-799fb58d68",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ReplicaSet",
+          "name": "web-frontend-799fb58d68",
+          "namespace": "apps",
+          "labels": {
+            "app": "web-frontend",
+            "env": "test",
+            "pod-template-hash": "799fb58d68",
+            "scenario": "complex",
+            "tier": "web"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/desired-replicas": "2",
+            "deployment.kubernetes.io/max-replicas": "3",
+            "deployment.kubernetes.io/revision": "1"
+          },
+          "replicas": 2,
+          "image": "nginxdemos/hello:plain-text"
+        },
+        "meta": {
+          "tags": {
+            "app": "web-frontend",
+            "env": "test",
+            "pod-template-hash": "799fb58d68",
+            "scenario": "complex",
+            "tier": "web"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/services/billing-api",
+        "label": "billing-api",
+        "floor": 0,
+        "bgKind": "ServiceDiscovery",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Service",
+          "name": "billing-api",
+          "namespace": "apps",
+          "labels": {
+            "domain": "billing",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "api"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"domain\":\"billing\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"api\"},\"name\":\"billing-api\",\"namespace\":\"apps\"},\"spec\":{\"ports\":[{\"port\":80,\"targetPort\":5678}],\"selector\":{\"app\":\"billing-api\"}}}\n"
+          },
+          "serviceType": "ClusterIP",
+          "ports": [
+            {
+              "port": 80,
+              "targetPort": 5678,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "meta": {
+          "tags": {
+            "domain": "billing",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "api"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/services/users-api",
+        "label": "users-api",
+        "floor": 0,
+        "bgKind": "ServiceDiscovery",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Service",
+          "name": "users-api",
+          "namespace": "apps",
+          "labels": {
+            "domain": "users",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "api"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"domain\":\"users\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"api\"},\"name\":\"users-api\",\"namespace\":\"apps\"},\"spec\":{\"ports\":[{\"port\":80,\"targetPort\":5678}],\"selector\":{\"app\":\"users-api\"}}}\n"
+          },
+          "serviceType": "ClusterIP",
+          "ports": [
+            {
+              "port": 80,
+              "targetPort": 5678,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "meta": {
+          "tags": {
+            "domain": "users",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "api"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/services/web-frontend",
+        "label": "web-frontend",
+        "floor": 0,
+        "bgKind": "ServiceDiscovery",
+        "parent": "cluster/complex/k8s/namespaces/apps",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Service",
+          "name": "web-frontend",
+          "namespace": "apps",
+          "labels": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "web"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"web\"},\"name\":\"web-frontend\",\"namespace\":\"apps\"},\"spec\":{\"ports\":[{\"port\":80,\"targetPort\":80}],\"selector\":{\"app\":\"web-frontend\"}}}\n"
+          },
+          "serviceType": "ClusterIP",
+          "ports": [
+            {
+              "port": 80,
+              "targetPort": 80,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "meta": {
+          "tags": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "web"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/data",
+        "label": "data",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "data",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "data"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "data"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/data/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/data",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "data",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/data/services/cache",
+        "label": "cache",
+        "floor": 0,
+        "bgKind": "ServiceDiscovery",
+        "parent": "cluster/complex/k8s/namespaces/data",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Service",
+          "name": "cache",
+          "namespace": "data",
+          "labels": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "cache"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"cache\"},\"name\":\"cache\",\"namespace\":\"data\"},\"spec\":{\"ports\":[{\"port\":6379,\"targetPort\":6379}],\"selector\":{\"app\":\"cache\"}}}\n"
+          },
+          "serviceType": "ClusterIP",
+          "ports": [
+            {
+              "port": 6379,
+              "targetPort": 6379,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "meta": {
+          "tags": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "cache"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/data/services/orders-db",
+        "label": "orders-db",
+        "floor": 0,
+        "bgKind": "ServiceDiscovery",
+        "parent": "cluster/complex/k8s/namespaces/data",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Service",
+          "name": "orders-db",
+          "namespace": "data",
+          "labels": {
+            "domain": "orders",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "data"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"domain\":\"orders\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"data\"},\"name\":\"orders-db\",\"namespace\":\"data\"},\"spec\":{\"ports\":[{\"port\":5432,\"targetPort\":5432}],\"selector\":{\"app\":\"orders-db\"}}}\n"
+          },
+          "serviceType": "ClusterIP",
+          "ports": [
+            {
+              "port": 5432,
+              "targetPort": 5432,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "meta": {
+          "tags": {
+            "domain": "orders",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "data"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/data/statefulsets/cache",
+        "label": "cache",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/data",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "StatefulSet",
+          "name": "cache",
+          "namespace": "data",
+          "labels": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "cache"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"StatefulSet\",\"metadata\":{\"annotations\":{},\"labels\":{\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"cache\"},\"name\":\"cache\",\"namespace\":\"data\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"cache\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"cache\"}},\"serviceName\":\"cache\",\"template\":{\"metadata\":{\"labels\":{\"app\":\"cache\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"cache\"}},\"spec\":{\"containers\":[{\"image\":\"redis:7-alpine\",\"name\":\"redis\",\"ports\":[{\"containerPort\":6379}],\"volumeMounts\":[{\"mountPath\":\"/data\",\"name\":\"cachedata\"}]}],\"volumes\":[{\"emptyDir\":{},\"name\":\"cachedata\"}]}}}}\n"
+          },
+          "replicas": 1,
+          "image": "redis:7-alpine"
+        },
+        "meta": {
+          "tags": {
+            "env": "test",
+            "scenario": "complex",
+            "tier": "cache"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/data/statefulsets/orders-db",
+        "label": "orders-db",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/data",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "StatefulSet",
+          "name": "orders-db",
+          "namespace": "data",
+          "labels": {
+            "domain": "orders",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "data"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"StatefulSet\",\"metadata\":{\"annotations\":{},\"labels\":{\"domain\":\"orders\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"data\"},\"name\":\"orders-db\",\"namespace\":\"data\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"orders-db\",\"domain\":\"orders\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"data\"}},\"serviceName\":\"orders-db\",\"template\":{\"metadata\":{\"labels\":{\"app\":\"orders-db\",\"domain\":\"orders\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"data\"}},\"spec\":{\"containers\":[{\"env\":[{\"name\":\"POSTGRES_USER\",\"value\":\"app\"},{\"name\":\"POSTGRES_PASSWORD\",\"value\":\"app\"},{\"name\":\"POSTGRES_DB\",\"value\":\"app\"}],\"image\":\"postgres:16-alpine\",\"name\":\"postgres\",\"ports\":[{\"containerPort\":5432}],\"volumeMounts\":[{\"mountPath\":\"/var/lib/postgresql/data\",\"name\":\"dbdata\"}]}],\"volumes\":[{\"emptyDir\":{},\"name\":\"dbdata\"}]}}}}\n"
+          },
+          "replicas": 1,
+          "image": "postgres:16-alpine"
+        },
+        "meta": {
+          "tags": {
+            "domain": "orders",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "data"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/default",
+        "label": "default",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "default",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "default"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "default"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/default/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/default",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "default",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/default/services/kubernetes",
+        "label": "kubernetes",
+        "floor": 0,
+        "bgKind": "ServiceDiscovery",
+        "parent": "cluster/complex/k8s/namespaces/default",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Service",
+          "name": "kubernetes",
+          "namespace": "default",
+          "labels": {
+            "component": "apiserver",
+            "provider": "kubernetes"
+          },
+          "serviceType": "ClusterIP",
+          "ports": [
+            {
+              "name": "https",
+              "port": 443,
+              "targetPort": 6443,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "meta": {
+          "tags": {
+            "component": "apiserver",
+            "provider": "kubernetes"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/jobs",
+        "label": "jobs",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "jobs",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "jobs"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "jobs"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/jobs/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/jobs",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "jobs",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/jobs/cronjobs/billing-reconciliation",
+        "label": "billing-reconciliation",
+        "floor": 0,
+        "bgKind": "JobRunner",
+        "parent": "cluster/complex/k8s/namespaces/jobs",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "CronJob",
+          "name": "billing-reconciliation",
+          "namespace": "jobs",
+          "labels": {
+            "domain": "billing",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "batch"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"batch/v1\",\"kind\":\"CronJob\",\"metadata\":{\"annotations\":{},\"labels\":{\"domain\":\"billing\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"batch\"},\"name\":\"billing-reconciliation\",\"namespace\":\"jobs\"},\"spec\":{\"concurrencyPolicy\":\"Forbid\",\"jobTemplate\":{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"domain\":\"billing\",\"env\":\"test\",\"scenario\":\"complex\",\"tier\":\"batch\"}},\"spec\":{\"containers\":[{\"command\":[\"/bin/sh\",\"-c\",\"echo reconcile run at $(date)\"],\"image\":\"busybox:1.36\",\"name\":\"reconcile\"}],\"restartPolicy\":\"OnFailure\"}}}},\"schedule\":\"*/10 * * * *\"}}\n"
+          },
+          "schedule": "*/10 * * * *"
+        },
+        "meta": {
+          "tags": {
+            "domain": "billing",
+            "env": "test",
+            "scenario": "complex",
+            "tier": "batch"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-node-lease",
+        "label": "kube-node-lease",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "kube-node-lease",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "kube-node-lease"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "kube-node-lease"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-node-lease/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-node-lease",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "kube-node-lease",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-public",
+        "label": "kube-public",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "kube-public",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "kube-public"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "kube-public"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-public/configmaps/cluster-info",
+        "label": "cluster-info",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-public",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "cluster-info",
+          "namespace": "kube-public"
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-public/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-public",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "kube-public",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system",
+        "label": "kube-system",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "kube-system",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "kube-system"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "kube-system"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/configmaps/coredns",
+        "label": "coredns",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "coredns",
+          "namespace": "kube-system"
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/configmaps/extension-apiserver-authentication",
+        "label": "extension-apiserver-authentication",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "extension-apiserver-authentication",
+          "namespace": "kube-system"
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/configmaps/kube-apiserver-legacy-service-account-token-tracking",
+        "label": "kube-apiserver-legacy-service-account-token-tracking",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-apiserver-legacy-service-account-token-tracking",
+          "namespace": "kube-system"
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/configmaps/kube-proxy",
+        "label": "kube-proxy",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-proxy",
+          "namespace": "kube-system",
+          "labels": {
+            "app": "kube-proxy"
+          }
+        },
+        "meta": {
+          "tags": {
+            "app": "kube-proxy"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "kube-system",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/configmaps/kubeadm-config",
+        "label": "kubeadm-config",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kubeadm-config",
+          "namespace": "kube-system"
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/configmaps/kubelet-config",
+        "label": "kubelet-config",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kubelet-config",
+          "namespace": "kube-system"
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/daemonsets/kindnet",
+        "label": "kindnet",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "DaemonSet",
+          "name": "kindnet",
+          "namespace": "kube-system",
+          "labels": {
+            "app": "kindnet",
+            "k8s-app": "kindnet",
+            "tier": "node"
+          },
+          "annotations": {
+            "deprecated.daemonset.template.generation": "1"
+          },
+          "image": "docker.io/kindest/kindnetd:v20260213-ea8e5717",
+          "resources": {
+            "requests": {
+              "cpu": "100m",
+              "memory": "50Mi"
+            },
+            "limits": {
+              "cpu": "100m",
+              "memory": "50Mi"
+            }
+          }
+        },
+        "meta": {
+          "tags": {
+            "app": "kindnet",
+            "k8s-app": "kindnet",
+            "tier": "node"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/daemonsets/kube-proxy",
+        "label": "kube-proxy",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "DaemonSet",
+          "name": "kube-proxy",
+          "namespace": "kube-system",
+          "labels": {
+            "k8s-app": "kube-proxy"
+          },
+          "annotations": {
+            "deprecated.daemonset.template.generation": "1"
+          },
+          "image": "registry.k8s.io/kube-proxy:v1.35.1"
+        },
+        "meta": {
+          "tags": {
+            "k8s-app": "kube-proxy"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/deployments/coredns",
+        "label": "coredns",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Deployment",
+          "name": "coredns",
+          "namespace": "kube-system",
+          "labels": {
+            "k8s-app": "kube-dns"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/revision": "1"
+          },
+          "replicas": 2,
+          "image": "registry.k8s.io/coredns/coredns:v1.13.1",
+          "resources": {
+            "requests": {
+              "cpu": "100m",
+              "memory": "70Mi"
+            },
+            "limits": {
+              "memory": "170Mi"
+            }
+          }
+        },
+        "meta": {
+          "tags": {
+            "k8s-app": "kube-dns"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/replicasets/coredns-7d764666f9",
+        "label": "coredns-7d764666f9",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ReplicaSet",
+          "name": "coredns-7d764666f9",
+          "namespace": "kube-system",
+          "labels": {
+            "k8s-app": "kube-dns",
+            "pod-template-hash": "7d764666f9"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/desired-replicas": "2",
+            "deployment.kubernetes.io/max-replicas": "3",
+            "deployment.kubernetes.io/revision": "1"
+          },
+          "replicas": 2,
+          "image": "registry.k8s.io/coredns/coredns:v1.13.1",
+          "resources": {
+            "requests": {
+              "cpu": "100m",
+              "memory": "70Mi"
+            },
+            "limits": {
+              "memory": "170Mi"
+            }
+          }
+        },
+        "meta": {
+          "tags": {
+            "k8s-app": "kube-dns",
+            "pod-template-hash": "7d764666f9"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/secrets/bootstrap-token-abcdef",
+        "label": "bootstrap-token-abcdef",
+        "floor": 0,
+        "bgKind": "SecretSource",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Secret",
+          "name": "bootstrap-token-abcdef",
+          "namespace": "kube-system"
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/kube-system/services/kube-dns",
+        "label": "kube-dns",
+        "floor": 0,
+        "bgKind": "ServiceDiscovery",
+        "parent": "cluster/complex/k8s/namespaces/kube-system",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Service",
+          "name": "kube-dns",
+          "namespace": "kube-system",
+          "labels": {
+            "k8s-app": "kube-dns",
+            "kubernetes.io/cluster-service": "true",
+            "kubernetes.io/name": "CoreDNS"
+          },
+          "annotations": {
+            "prometheus.io/port": "9153",
+            "prometheus.io/scrape": "true"
+          },
+          "serviceType": "ClusterIP",
+          "ports": [
+            {
+              "name": "dns",
+              "port": 53,
+              "targetPort": 53,
+              "protocol": "UDP"
+            },
+            {
+              "name": "dns-tcp",
+              "port": 53,
+              "targetPort": 53,
+              "protocol": "TCP"
+            },
+            {
+              "name": "metrics",
+              "port": 9153,
+              "targetPort": 9153,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "meta": {
+          "tags": {
+            "k8s-app": "kube-dns",
+            "kubernetes.io/cluster-service": "true",
+            "kubernetes.io/name": "CoreDNS"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/local-path-storage",
+        "label": "local-path-storage",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "local-path-storage",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "local-path-storage"
+          },
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"annotations\":{},\"name\":\"local-path-storage\"}}\n"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "local-path-storage"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/local-path-storage/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/local-path-storage",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "local-path-storage",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/local-path-storage/configmaps/local-path-config",
+        "label": "local-path-config",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/local-path-storage",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "local-path-config",
+          "namespace": "local-path-storage",
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"config.json\":\"{\\n        \\\"nodePathMap\\\":[\\n        {\\n                \\\"node\\\":\\\"DEFAULT_PATH_FOR_NON_LISTED_NODES\\\",\\n                \\\"paths\\\":[\\\"/var/local-path-provisioner\\\"]\\n        }\\n        ]\\n}\",\"helperPod.yaml\":\"apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: helper-pod\\nspec:\\n  priorityClassName: system-node-critical\\n  tolerations:\\n    - key: node.kubernetes.io/disk-pressure\\n      operator: Exists\\n      effect: NoSchedule\\n  containers:\\n  - name: helper-pod\\n    image: docker.io/kindest/local-path-helper:v20260131-7181c60a\\n    imagePullPolicy: IfNotPresent\",\"setup\":\"#!/bin/sh\\nset -eu\\nmkdir -m 0777 -p \\\"$VOL_DIR\\\"\",\"teardown\":\"#!/bin/sh\\nset -eu\\nrm -rf \\\"$VOL_DIR\\\"\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"name\":\"local-path-config\",\"namespace\":\"local-path-storage\"}}\n"
+          }
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/local-path-storage/deployments/local-path-provisioner",
+        "label": "local-path-provisioner",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/local-path-storage",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Deployment",
+          "name": "local-path-provisioner",
+          "namespace": "local-path-storage",
+          "annotations": {
+            "deployment.kubernetes.io/revision": "1",
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"local-path-provisioner\",\"namespace\":\"local-path-storage\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"local-path-provisioner\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"local-path-provisioner\"}},\"spec\":{\"containers\":[{\"command\":[\"local-path-provisioner\",\"--debug\",\"start\",\"--helper-image\",\"docker.io/kindest/local-path-helper:v20260131-7181c60a\",\"--config\",\"/etc/config/config.json\"],\"env\":[{\"name\":\"POD_NAMESPACE\",\"valueFrom\":{\"fieldRef\":{\"fieldPath\":\"metadata.namespace\"}}},{\"name\":\"CONFIG_MOUNT_PATH\",\"value\":\"/etc/config/\"}],\"image\":\"docker.io/kindest/local-path-provisioner:v20260213-ea8e5717\",\"imagePullPolicy\":\"IfNotPresent\",\"name\":\"local-path-provisioner\",\"volumeMounts\":[{\"mountPath\":\"/etc/config/\",\"name\":\"config-volume\"}]}],\"nodeSelector\":{\"kubernetes.io/os\":\"linux\"},\"serviceAccountName\":\"local-path-provisioner-service-account\",\"tolerations\":[{\"effect\":\"NoSchedule\",\"key\":\"node-role.kubernetes.io/control-plane\",\"operator\":\"Equal\"},{\"effect\":\"NoSchedule\",\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Equal\"}],\"volumes\":[{\"configMap\":{\"name\":\"local-path-config\"},\"name\":\"config-volume\"}]}}}}\n"
+          },
+          "replicas": 1,
+          "image": "docker.io/kindest/local-path-provisioner:v20260213-ea8e5717"
+        },
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/local-path-storage/replicasets/local-path-provisioner-84669cbbb8",
+        "label": "local-path-provisioner-84669cbbb8",
+        "floor": 0,
+        "bgKind": "Workload",
+        "parent": "cluster/complex/k8s/namespaces/local-path-storage",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ReplicaSet",
+          "name": "local-path-provisioner-84669cbbb8",
+          "namespace": "local-path-storage",
+          "labels": {
+            "app": "local-path-provisioner",
+            "pod-template-hash": "84669cbbb8"
+          },
+          "annotations": {
+            "deployment.kubernetes.io/desired-replicas": "1",
+            "deployment.kubernetes.io/max-replicas": "2",
+            "deployment.kubernetes.io/revision": "1"
+          },
+          "replicas": 1,
+          "image": "docker.io/kindest/local-path-provisioner:v20260213-ea8e5717"
+        },
+        "meta": {
+          "tags": {
+            "app": "local-path-provisioner",
+            "pod-template-hash": "84669cbbb8"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/platform",
+        "label": "platform",
+        "floor": 0,
+        "bgKind": "Namespace",
+        "parent": "cluster/complex",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "Namespace",
+          "name": "platform",
+          "namespace": null,
+          "labels": {
+            "kubernetes.io/metadata.name": "platform"
+          }
+        },
+        "meta": {
+          "tags": {
+            "kubernetes.io/metadata.name": "platform"
+          }
+        }
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/platform/configmaps/kube-root-ca.crt",
+        "label": "kube-root-ca.crt",
+        "floor": 0,
+        "bgKind": "ConfigSource",
+        "parent": "cluster/complex/k8s/namespaces/platform",
+        "infraProvider": "kubernetes",
+        "k8s": {
+          "kind": "ConfigMap",
+          "name": "kube-root-ca.crt",
+          "namespace": "platform",
+          "annotations": {
+            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
+          }
+        },
+        "meta": {}
+      }
+    }
+  ],
+  "edges": [
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/services/billing-api|cluster/complex/k8s/namespaces/apps/deployments/billing-api|Exposes|true",
+        "source": "cluster/complex/k8s/namespaces/apps/services/billing-api",
+        "target": "cluster/complex/k8s/namespaces/apps/deployments/billing-api",
+        "floor": 0,
+        "bgRelation": "Exposes",
+        "extractionSource": "k8s-manifest",
+        "inferred": true,
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/services/users-api|cluster/complex/k8s/namespaces/apps/deployments/users-api|Exposes|true",
+        "source": "cluster/complex/k8s/namespaces/apps/services/users-api",
+        "target": "cluster/complex/k8s/namespaces/apps/deployments/users-api",
+        "floor": 0,
+        "bgRelation": "Exposes",
+        "extractionSource": "k8s-manifest",
+        "inferred": true,
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/apps/services/web-frontend|cluster/complex/k8s/namespaces/apps/deployments/web-frontend|Exposes|true",
+        "source": "cluster/complex/k8s/namespaces/apps/services/web-frontend",
+        "target": "cluster/complex/k8s/namespaces/apps/deployments/web-frontend",
+        "floor": 0,
+        "bgRelation": "Exposes",
+        "extractionSource": "k8s-manifest",
+        "inferred": true,
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/data/services/cache|cluster/complex/k8s/namespaces/data/statefulsets/cache|Exposes|true",
+        "source": "cluster/complex/k8s/namespaces/data/services/cache",
+        "target": "cluster/complex/k8s/namespaces/data/statefulsets/cache",
+        "floor": 0,
+        "bgRelation": "Exposes",
+        "extractionSource": "k8s-manifest",
+        "inferred": true,
+        "meta": {}
+      }
+    },
+    {
+      "data": {
+        "id": "cluster/complex/k8s/namespaces/data/services/orders-db|cluster/complex/k8s/namespaces/data/statefulsets/orders-db|Exposes|true",
+        "source": "cluster/complex/k8s/namespaces/data/services/orders-db",
+        "target": "cluster/complex/k8s/namespaces/data/statefulsets/orders-db",
+        "floor": 0,
+        "bgRelation": "Exposes",
+        "extractionSource": "k8s-manifest",
+        "inferred": true,
+        "meta": {}
+      }
+    }
+  ],
+  "meta": {}
+}
