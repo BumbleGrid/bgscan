@@ -54,7 +54,6 @@ bgspec.schema.json.`,
 			return fmt.Errorf("no reachable kubeconfig context to scan")
 		}
 		trans := k8s.NewNodeTranslator()
-		res := k8s.NewEdgeResolver()
 		extractedAt := time.Now().UTC().Format(time.RFC3339)
 		meta := node.Meta{ExtractorVersion: cfg.ExtractorVersion, ExtractedAt: extractedAt}
 		var content floor.Content
@@ -66,6 +65,7 @@ bgspec.schema.json.`,
 				extractErrors = append(extractErrors, fmt.Errorf("context %q: %w", scanContext, err))
 				continue
 			}
+			res := k8s.NewEdgeResolver(k8s.EdgeResolverWithIstioLister(k8s.NewIstioCRDLister(client)))
 			reader := k8s.NewReader(client)
 			lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
 			tctx := k8s.K8sTranslateContext{
@@ -363,26 +363,4 @@ func clusterServerURL(kubeconfigPath, contextName string) string {
 		return ""
 	}
 	return cluster.Server
-}
-
-func agentDebugLog(hypothesisID, location, message string, data map[string]any) {
-	const logPath = "/home/rubens/project/bumblegrid/monorepo/.cursor/debug-a042bf.log"
-	payload := map[string]any{
-		"sessionId":    "a042bf",
-		"hypothesisId": hypothesisID,
-		"location":     location,
-		"message":      message,
-		"data":         data,
-		"timestamp":    time.Now().UnixMilli(),
-	}
-	line, err := json.Marshal(payload)
-	if err != nil {
-		return
-	}
-	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return
-	}
-	defer file.Close()
-	_, _ = file.Write(append(line, '\n'))
 }

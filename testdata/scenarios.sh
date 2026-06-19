@@ -254,10 +254,36 @@ find_gowork() {
   return 1
 }
 
+resolve_gowork() {
+  local gowork=""
+  local generated="${SCRIPT_DIR}/.go.work.scenarios"
+  local bgbase_mod="${BGSCAN_ROOT}/../bgbase/go.mod"
+
+  if gowork="$(find_gowork)"; then
+    printf '%s' "${gowork}"
+    return 0
+  fi
+
+  if [[ -f "${bgbase_mod}" ]]; then
+    cat > "${generated}" <<'EOF'
+go 1.22.2
+
+use (
+	..
+	../../bgbase
+)
+EOF
+    printf '%s' "${generated}"
+    return 0
+  fi
+
+  return 1
+}
+
 go_run_env() {
   local -a env_args=()
   local gowork=""
-  if gowork="$(find_gowork)"; then
+  if gowork="$(resolve_gowork)"; then
     env_args+=(GOWORK="${gowork}")
   else
     env_args+=(GOFLAGS=-mod=mod)
@@ -266,7 +292,8 @@ go_run_env() {
 }
 
 ensure_bgscan_binary() {
-  if [[ -x "${BGSCAN_BIN}" ]]; then
+  local force_rebuild="${1:-false}"
+  if [[ "${force_rebuild}" != true && -x "${BGSCAN_BIN}" ]]; then
     return 0
   fi
   log "building bgscan binary at ${BGSCAN_BIN}..."
@@ -392,7 +419,7 @@ main() {
   if [[ "${ACTION}" == "test" ]]; then
     require_cmd kind
     require_cmd go
-    ensure_bgscan_binary
+    ensure_bgscan_binary true
     if [[ "${TEST_ALL}" == true ]]; then
       run_test_all
       return 0

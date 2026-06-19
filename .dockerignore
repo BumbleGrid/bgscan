@@ -1,0 +1,7 @@
+# Build context is the bgscan repository root.
+.git
+.idea
+.cursor
+bgconfig.yaml
+bgscan.yaml
+testdata/.kind-*

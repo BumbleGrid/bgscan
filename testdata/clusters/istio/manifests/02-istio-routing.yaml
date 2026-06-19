@@ -1,0 +1,94 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: payments-route
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+spec:
+  hosts:
+    - payments-api
+  http:
+    - match:
+        - uri:
+            prefix: /pay
+      route:
+        - destination:
+            host: identity-api
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: catalog-canary
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+spec:
+  hosts:
+    - catalog
+  http:
+    - route:
+        - destination:
+            host: catalog-v1
+          weight: 90
+        - destination:
+            host: catalog-v2
+          weight: 10
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: identity-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+spec:
+  host: identity-api
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+spec:
+  hosts:
+    - external-api
+  location: MESH_EXTERNAL
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: payments-external
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+spec:
+  hosts:
+    - payments-api
+  http:
+    - route:
+        - destination:
+            host: external-api

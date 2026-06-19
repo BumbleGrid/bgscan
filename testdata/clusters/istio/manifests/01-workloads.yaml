@@ -1,0 +1,811 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-api
+  namespace: platform
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: platform-api
+      env: test
+      scenario: istio
+      tier: api
+  template:
+    metadata:
+      labels:
+        app: platform-api
+        env: test
+        scenario: istio
+        tier: api
+    spec:
+      containers:
+        - name: platform-api
+          image: hashicorp/http-echo:1.0.0
+          args:
+            - "-listen=:5678"
+            - "-text=platform api"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform-api
+  namespace: platform
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+spec:
+  selector:
+    app: platform-api
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-config
+  namespace: platform
+  labels:
+    env: test
+    scenario: istio
+data:
+  app.properties: |
+    log.level=info
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: platform-secret
+  namespace: platform
+  labels:
+    env: test
+    scenario: istio
+type: Opaque
+stringData:
+  api-token: test-token
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: platform-deny-egress
+  namespace: platform
+  labels:
+    env: test
+    scenario: istio
+spec:
+  podSelector:
+    matchLabels:
+      app: platform-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector: {}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: platform-api
+  namespace: platform
+  labels:
+    env: test
+    scenario: istio
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: platform-api
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: users
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: users-api
+      env: test
+      scenario: istio
+      tier: api
+      domain: users
+  template:
+    metadata:
+      labels:
+        app: users-api
+        env: test
+        scenario: istio
+        tier: api
+        domain: users
+    spec:
+      containers:
+        - name: users-api
+          image: hashicorp/http-echo:1.0.0
+          args:
+            - "-listen=:5678"
+            - "-text=users api"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: billing
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: billing-api
+      env: test
+      scenario: istio
+      tier: api
+      domain: billing
+  template:
+    metadata:
+      labels:
+        app: billing-api
+        env: test
+        scenario: istio
+        tier: api
+        domain: billing
+    spec:
+      containers:
+        - name: billing-api
+          image: hashicorp/http-echo:1.0.0
+          args:
+            - "-listen=:5678"
+            - "-text=billing api"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: payments
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payments-api
+      env: test
+      scenario: istio
+      tier: api
+      domain: payments
+  template:
+    metadata:
+      labels:
+        app: payments-api
+        env: test
+        scenario: istio
+        tier: api
+        domain: payments
+    spec:
+      containers:
+        - name: payments-api
+          image: hashicorp/http-echo:1.0.0
+          args:
+            - "-listen=:5678"
+            - "-text=payments api"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: identity
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: identity-api
+      env: test
+      scenario: istio
+      tier: api
+      domain: identity
+  template:
+    metadata:
+      labels:
+        app: identity-api
+        env: test
+        scenario: istio
+        tier: api
+        domain: identity
+    spec:
+      containers:
+        - name: identity-api
+          image: hashicorp/http-echo:1.0.0
+          args:
+            - "-listen=:5678"
+            - "-text=identity api"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: catalog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog
+      env: test
+      scenario: istio
+      tier: api
+      domain: catalog
+  template:
+    metadata:
+      labels:
+        app: catalog
+        env: test
+        scenario: istio
+        tier: api
+        domain: catalog
+    spec:
+      containers:
+        - name: catalog
+          image: hashicorp/http-echo:1.0.0
+          args:
+            - "-listen=:5678"
+            - "-text=catalog"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-v1
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: catalog
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-v1
+      env: test
+      scenario: istio
+      tier: api
+      domain: catalog
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: catalog-v1
+        env: test
+        scenario: istio
+        tier: api
+        domain: catalog
+        version: v1
+    spec:
+      containers:
+        - name: catalog-v1
+          image: hashicorp/http-echo:1.0.0
+          args:
+            - "-listen=:5678"
+            - "-text=catalog v1"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-v2
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: catalog
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-v2
+      env: test
+      scenario: istio
+      tier: api
+      domain: catalog
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: catalog-v2
+        env: test
+        scenario: istio
+        tier: api
+        domain: catalog
+        version: v2
+    spec:
+      containers:
+        - name: catalog-v2
+          image: hashicorp/http-echo:1.0.0
+          args:
+            - "-listen=:5678"
+            - "-text=catalog v2"
+          ports:
+            - containerPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-frontend
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-frontend
+      env: test
+      scenario: istio
+      tier: web
+  template:
+    metadata:
+      labels:
+        app: web-frontend
+        env: test
+        scenario: istio
+        tier: web
+    spec:
+      containers:
+        - name: web-frontend
+          image: nginxdemos/hello:plain-text
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: users-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: users
+spec:
+  selector:
+    app: users-api
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: billing
+spec:
+  selector:
+    app: billing-api
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: payments
+spec:
+  selector:
+    app: payments-api
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: identity
+spec:
+  selector:
+    app: identity-api
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: catalog
+spec:
+  selector:
+    app: catalog
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-v1
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: catalog
+    version: v1
+spec:
+  selector:
+    app: catalog-v1
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-v2
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: catalog
+    version: v2
+spec:
+  selector:
+    app: catalog-v2
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-frontend
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: web
+spec:
+  selector:
+    app: web-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-api
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: api
+    domain: external
+spec:
+  type: ExternalName
+  externalName: api.external.com
+  ports:
+    - port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-gateway
+  namespace: apps
+  labels:
+    env: test
+    scenario: istio
+    tier: gateway
+spec:
+  rules:
+    - host: app.local
+      http:
+        paths:
+          - path: /users
+            pathType: Prefix
+            backend:
+              service:
+                name: users-api
+                port:
+                  number: 80
+          - path: /billing
+            pathType: Prefix
+            backend:
+              service:
+                name: billing-api
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-frontend
+                port:
+                  number: 80
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: billing-reconciliation
+  namespace: jobs
+  labels:
+    env: test
+    scenario: istio
+    tier: batch
+    domain: billing
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            env: test
+            scenario: istio
+            tier: batch
+            domain: billing
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: reconcile
+              image: busybox:1.36
+              command:
+                - /bin/sh
+                - -c
+                - "echo reconcile run at $(date)"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-import
+  namespace: jobs
+  labels:
+    env: test
+    scenario: istio
+    tier: batch
+    domain: data
+spec:
+  template:
+    metadata:
+      labels:
+        env: test
+        scenario: istio
+        tier: batch
+        domain: data
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: import
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - "echo data import complete"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: data-archive-pv
+  labels:
+    env: test
+    scenario: istio
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /tmp/istio-data-archive
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-archive
+  namespace: data
+  labels:
+    env: test
+    scenario: istio
+    tier: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: data-archive-pv
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: orders-db
+  namespace: data
+  labels:
+    env: test
+    scenario: istio
+    tier: data
+    domain: orders
+spec:
+  serviceName: orders-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders-db
+      env: test
+      scenario: istio
+      tier: data
+      domain: orders
+  template:
+    metadata:
+      labels:
+        app: orders-db
+        env: test
+        scenario: istio
+        tier: data
+        domain: orders
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - name: POSTGRES_USER
+              value: app
+            - name: POSTGRES_PASSWORD
+              value: app
+            - name: POSTGRES_DB
+              value: app
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: dbdata
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: dbdata
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-db
+  namespace: data
+  labels:
+    env: test
+    scenario: istio
+    tier: data
+    domain: orders
+spec:
+  selector:
+    app: orders-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cache
+  namespace: data
+  labels:
+    env: test
+    scenario: istio
+    tier: cache
+spec:
+  serviceName: cache
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cache
+      env: test
+      scenario: istio
+      tier: cache
+  template:
+    metadata:
+      labels:
+        app: cache
+        env: test
+        scenario: istio
+        tier: cache
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: cachedata
+              mountPath: /data
+      volumes:
+        - name: cachedata
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cache
+  namespace: data
+  labels:
+    env: test
+    scenario: istio
+    tier: cache
+spec:
+  selector:
+    app: cache
+  ports:
+    - port: 6379
+      targetPort: 6379

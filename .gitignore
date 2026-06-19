@@ -1,5 +1,7 @@
 .idea
 bgconfig.yaml
 testdata/.kind-*
+testdata/.go.work.scenarios
 .cursor
 bgscan.yaml
+vendor
