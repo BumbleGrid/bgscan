@@ -94,3 +94,32 @@ go build -o bgscan .
 ```
 
 Copy `bgconfig.sample.yaml` to `bgconfig.yaml` beside the binary, or pass `--config /path/to/bgconfig.yaml`.
+
+## Publishing (maintainers)
+
+Published images live on Docker Hub at `bumblegrid/bgscan`. Builds are triggered manually from the bgscan GitHub repository.
+
+### Prerequisites
+
+- Docker Hub repository `bumblegrid/bgscan` exists under the `bumblegrid` org.
+- GitHub repository secrets configured:
+  - `DOCKERHUB_USERNAME` — Docker Hub login for the `bumblegrid` org
+  - `DOCKERHUB_TOKEN` — access token with push rights to `bumblegrid/bgscan`
+  - `GO_MODULE_GITHUB_TOKEN` (optional) — PAT with `repo` read access for private `github.com/BumbleGrid/bgbase`; falls back to the workflow `GITHUB_TOKEN` when unset
+
+### Publish a version
+
+1. Open **Actions → Publish container image → Run workflow** in the bgscan repo.
+2. Set **image_tag** to an immutable semver (e.g. `0.2.0`). Optionally enable **also_tag_latest** to update the moving `latest` pointer.
+3. After the workflow succeeds, verify:
+
+```bash
+docker pull bumblegrid/bgscan:0.2.0
+docker run --rm bumblegrid/bgscan:0.2.0 --help
+```
+
+The image entrypoint is `bgscan` with no default command args — in-cluster CronJob/Job manifests supply `run --config …` (see deploy docs in Step 04).
+
+When releasing a new tag, bump the pinned image tag in the kustomize base (Step 04). Security-conscious deployments can pin by digest instead of tag.
+
+Docker Hub applies pull rate limits to anonymous users; document cluster image-pull secrets or Docker Hub login if customers hit limits.

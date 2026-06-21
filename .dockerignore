@@ -5,3 +5,6 @@
 bgconfig.yaml
 bgscan.yaml
 testdata/.kind-*
+vendor
+bgscan
+output
