@@ -3,7 +3,7 @@ module github.com/BumbleGrid/bgscan
 go 1.22.2
 
 require (
-	github.com/BumbleGrid/bgbase v0.0.1-beta.2
+	github.com/BumbleGrid/bgbase v0.0.1-beta.3
 	github.com/spf13/cobra v1.8.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/client-go v0.29.3

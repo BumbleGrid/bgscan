@@ -38,25 +38,6 @@
     },
     {
       "data": {
-        "id": "cluster/simple/k8s/namespaces/apps/configmaps/kube-root-ca.crt",
-        "label": "kube-root-ca.crt",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/apps",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-root-ca.crt",
-          "namespace": "apps",
-          "annotations": {
-            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
-          }
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
         "id": "cluster/simple/k8s/namespaces/apps/deployments/api",
         "label": "api",
         "floor": 0,
@@ -115,82 +96,6 @@
         "meta": {
           "tags": {
             "env": "test",
-            "scenario": "simple",
-            "tier": "web"
-          }
-        }
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/apps/replicasets/api-86d787896",
-        "label": "api-86d787896",
-        "floor": 0,
-        "bgKind": "Workload",
-        "parent": "cluster/simple/k8s/namespaces/apps",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ReplicaSet",
-          "name": "api-86d787896",
-          "namespace": "apps",
-          "labels": {
-            "app": "api",
-            "env": "test",
-            "pod-template-hash": "86d787896",
-            "scenario": "simple",
-            "tier": "api"
-          },
-          "annotations": {
-            "deployment.kubernetes.io/desired-replicas": "1",
-            "deployment.kubernetes.io/max-replicas": "2",
-            "deployment.kubernetes.io/revision": "1"
-          },
-          "replicas": 1,
-          "image": "hashicorp/http-echo:1.0.0"
-        },
-        "meta": {
-          "tags": {
-            "app": "api",
-            "env": "test",
-            "pod-template-hash": "86d787896",
-            "scenario": "simple",
-            "tier": "api"
-          }
-        }
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/apps/replicasets/frontend-6b8b7b7dd4",
-        "label": "frontend-6b8b7b7dd4",
-        "floor": 0,
-        "bgKind": "Workload",
-        "parent": "cluster/simple/k8s/namespaces/apps",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ReplicaSet",
-          "name": "frontend-6b8b7b7dd4",
-          "namespace": "apps",
-          "labels": {
-            "app": "frontend",
-            "env": "test",
-            "pod-template-hash": "6b8b7b7dd4",
-            "scenario": "simple",
-            "tier": "web"
-          },
-          "annotations": {
-            "deployment.kubernetes.io/desired-replicas": "1",
-            "deployment.kubernetes.io/max-replicas": "2",
-            "deployment.kubernetes.io/revision": "1"
-          },
-          "replicas": 1,
-          "image": "nginxdemos/hello:plain-text"
-        },
-        "meta": {
-          "tags": {
-            "app": "frontend",
-            "env": "test",
-            "pod-template-hash": "6b8b7b7dd4",
             "scenario": "simple",
             "tier": "web"
           }
@@ -298,25 +203,6 @@
     },
     {
       "data": {
-        "id": "cluster/simple/k8s/namespaces/data/configmaps/kube-root-ca.crt",
-        "label": "kube-root-ca.crt",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/data",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-root-ca.crt",
-          "namespace": "data",
-          "annotations": {
-            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
-          }
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
         "id": "cluster/simple/k8s/namespaces/data/deployments/database",
         "label": "database",
         "floor": 0,
@@ -375,82 +261,6 @@
         "meta": {
           "tags": {
             "env": "test",
-            "scenario": "simple",
-            "tier": "cache"
-          }
-        }
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/data/replicasets/database-98f4bb97d",
-        "label": "database-98f4bb97d",
-        "floor": 0,
-        "bgKind": "Workload",
-        "parent": "cluster/simple/k8s/namespaces/data",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ReplicaSet",
-          "name": "database-98f4bb97d",
-          "namespace": "data",
-          "labels": {
-            "app": "database",
-            "env": "test",
-            "pod-template-hash": "98f4bb97d",
-            "scenario": "simple",
-            "tier": "data"
-          },
-          "annotations": {
-            "deployment.kubernetes.io/desired-replicas": "1",
-            "deployment.kubernetes.io/max-replicas": "2",
-            "deployment.kubernetes.io/revision": "1"
-          },
-          "replicas": 1,
-          "image": "postgres:16-alpine"
-        },
-        "meta": {
-          "tags": {
-            "app": "database",
-            "env": "test",
-            "pod-template-hash": "98f4bb97d",
-            "scenario": "simple",
-            "tier": "data"
-          }
-        }
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/data/replicasets/redis-758cd577d8",
-        "label": "redis-758cd577d8",
-        "floor": 0,
-        "bgKind": "Workload",
-        "parent": "cluster/simple/k8s/namespaces/data",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ReplicaSet",
-          "name": "redis-758cd577d8",
-          "namespace": "data",
-          "labels": {
-            "app": "redis",
-            "env": "test",
-            "pod-template-hash": "758cd577d8",
-            "scenario": "simple",
-            "tier": "cache"
-          },
-          "annotations": {
-            "deployment.kubernetes.io/desired-replicas": "1",
-            "deployment.kubernetes.io/max-replicas": "2",
-            "deployment.kubernetes.io/revision": "1"
-          },
-          "replicas": 1,
-          "image": "redis:7-alpine"
-        },
-        "meta": {
-          "tags": {
-            "app": "redis",
-            "env": "test",
-            "pod-template-hash": "758cd577d8",
             "scenario": "simple",
             "tier": "cache"
           }
@@ -558,25 +368,6 @@
     },
     {
       "data": {
-        "id": "cluster/simple/k8s/namespaces/default/configmaps/kube-root-ca.crt",
-        "label": "kube-root-ca.crt",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/default",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-root-ca.crt",
-          "namespace": "default",
-          "annotations": {
-            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
-          }
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
         "id": "cluster/simple/k8s/namespaces/default/services/kubernetes",
         "label": "kubernetes",
         "floor": 0,
@@ -634,25 +425,6 @@
     },
     {
       "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-node-lease/configmaps/kube-root-ca.crt",
-        "label": "kube-root-ca.crt",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-node-lease",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-root-ca.crt",
-          "namespace": "kube-node-lease",
-          "annotations": {
-            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
-          }
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
         "id": "cluster/simple/k8s/namespaces/kube-public",
         "label": "kube-public",
         "floor": 0,
@@ -676,41 +448,6 @@
     },
     {
       "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-public/configmaps/cluster-info",
-        "label": "cluster-info",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-public",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "cluster-info",
-          "namespace": "kube-public"
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-public/configmaps/kube-root-ca.crt",
-        "label": "kube-root-ca.crt",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-public",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-root-ca.crt",
-          "namespace": "kube-public",
-          "annotations": {
-            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
-          }
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
         "id": "cluster/simple/k8s/namespaces/kube-system",
         "label": "kube-system",
         "floor": 0,
@@ -730,128 +467,6 @@
             "kubernetes.io/metadata.name": "kube-system"
           }
         }
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/configmaps/coredns",
-        "label": "coredns",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "coredns",
-          "namespace": "kube-system"
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/configmaps/extension-apiserver-authentication",
-        "label": "extension-apiserver-authentication",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "extension-apiserver-authentication",
-          "namespace": "kube-system"
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/configmaps/kube-apiserver-legacy-service-account-token-tracking",
-        "label": "kube-apiserver-legacy-service-account-token-tracking",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-apiserver-legacy-service-account-token-tracking",
-          "namespace": "kube-system"
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/configmaps/kube-proxy",
-        "label": "kube-proxy",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-proxy",
-          "namespace": "kube-system",
-          "labels": {
-            "app": "kube-proxy"
-          }
-        },
-        "meta": {
-          "tags": {
-            "app": "kube-proxy"
-          }
-        }
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/configmaps/kube-root-ca.crt",
-        "label": "kube-root-ca.crt",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-root-ca.crt",
-          "namespace": "kube-system",
-          "annotations": {
-            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
-          }
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/configmaps/kubeadm-config",
-        "label": "kubeadm-config",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kubeadm-config",
-          "namespace": "kube-system"
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/configmaps/kubelet-config",
-        "label": "kubelet-config",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kubelet-config",
-          "namespace": "kube-system"
-        },
-        "meta": {}
       }
     },
     {
@@ -961,63 +576,6 @@
     },
     {
       "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/replicasets/coredns-7d764666f9",
-        "label": "coredns-7d764666f9",
-        "floor": 0,
-        "bgKind": "Workload",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ReplicaSet",
-          "name": "coredns-7d764666f9",
-          "namespace": "kube-system",
-          "labels": {
-            "k8s-app": "kube-dns",
-            "pod-template-hash": "7d764666f9"
-          },
-          "annotations": {
-            "deployment.kubernetes.io/desired-replicas": "2",
-            "deployment.kubernetes.io/max-replicas": "3",
-            "deployment.kubernetes.io/revision": "1"
-          },
-          "replicas": 2,
-          "image": "registry.k8s.io/coredns/coredns:v1.13.1",
-          "resources": {
-            "requests": {
-              "cpu": "100m",
-              "memory": "70Mi"
-            },
-            "limits": {
-              "memory": "170Mi"
-            }
-          }
-        },
-        "meta": {
-          "tags": {
-            "k8s-app": "kube-dns",
-            "pod-template-hash": "7d764666f9"
-          }
-        }
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/kube-system/secrets/bootstrap-token-abcdef",
-        "label": "bootstrap-token-abcdef",
-        "floor": 0,
-        "bgKind": "SecretSource",
-        "parent": "cluster/simple/k8s/namespaces/kube-system",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "Secret",
-          "name": "bootstrap-token-abcdef",
-          "namespace": "kube-system"
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
         "id": "cluster/simple/k8s/namespaces/kube-system/services/kube-dns",
         "label": "kube-dns",
         "floor": 0,
@@ -1096,44 +654,6 @@
     },
     {
       "data": {
-        "id": "cluster/simple/k8s/namespaces/local-path-storage/configmaps/kube-root-ca.crt",
-        "label": "kube-root-ca.crt",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/local-path-storage",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "kube-root-ca.crt",
-          "namespace": "local-path-storage",
-          "annotations": {
-            "kubernetes.io/description": "Contains a CA bundle that can be used to verify the kube-apiserver when using internal endpoints such as the internal service IP or kubernetes.default.svc. No other usage is guaranteed across distributions of Kubernetes clusters."
-          }
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/local-path-storage/configmaps/local-path-config",
-        "label": "local-path-config",
-        "floor": 0,
-        "bgKind": "ConfigSource",
-        "parent": "cluster/simple/k8s/namespaces/local-path-storage",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ConfigMap",
-          "name": "local-path-config",
-          "namespace": "local-path-storage",
-          "annotations": {
-            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"config.json\":\"{\\n        \\\"nodePathMap\\\":[\\n        {\\n                \\\"node\\\":\\\"DEFAULT_PATH_FOR_NON_LISTED_NODES\\\",\\n                \\\"paths\\\":[\\\"/var/local-path-provisioner\\\"]\\n        }\\n        ]\\n}\",\"helperPod.yaml\":\"apiVersion: v1\\nkind: Pod\\nmetadata:\\n  name: helper-pod\\nspec:\\n  priorityClassName: system-node-critical\\n  tolerations:\\n    - key: node.kubernetes.io/disk-pressure\\n      operator: Exists\\n      effect: NoSchedule\\n  containers:\\n  - name: helper-pod\\n    image: docker.io/kindest/local-path-helper:v20260131-7181c60a\\n    imagePullPolicy: IfNotPresent\",\"setup\":\"#!/bin/sh\\nset -eu\\nmkdir -m 0777 -p \\\"$VOL_DIR\\\"\",\"teardown\":\"#!/bin/sh\\nset -eu\\nrm -rf \\\"$VOL_DIR\\\"\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"name\":\"local-path-config\",\"namespace\":\"local-path-storage\"}}\n"
-          }
-        },
-        "meta": {}
-      }
-    },
-    {
-      "data": {
         "id": "cluster/simple/k8s/namespaces/local-path-storage/deployments/local-path-provisioner",
         "label": "local-path-provisioner",
         "floor": 0,
@@ -1152,38 +672,6 @@
           "image": "docker.io/kindest/local-path-provisioner:v20260213-ea8e5717"
         },
         "meta": {}
-      }
-    },
-    {
-      "data": {
-        "id": "cluster/simple/k8s/namespaces/local-path-storage/replicasets/local-path-provisioner-84669cbbb8",
-        "label": "local-path-provisioner-84669cbbb8",
-        "floor": 0,
-        "bgKind": "Workload",
-        "parent": "cluster/simple/k8s/namespaces/local-path-storage",
-        "infraProvider": "kubernetes",
-        "k8s": {
-          "kind": "ReplicaSet",
-          "name": "local-path-provisioner-84669cbbb8",
-          "namespace": "local-path-storage",
-          "labels": {
-            "app": "local-path-provisioner",
-            "pod-template-hash": "84669cbbb8"
-          },
-          "annotations": {
-            "deployment.kubernetes.io/desired-replicas": "1",
-            "deployment.kubernetes.io/max-replicas": "2",
-            "deployment.kubernetes.io/revision": "1"
-          },
-          "replicas": 1,
-          "image": "docker.io/kindest/local-path-provisioner:v20260213-ea8e5717"
-        },
-        "meta": {
-          "tags": {
-            "app": "local-path-provisioner",
-            "pod-template-hash": "84669cbbb8"
-          }
-        }
       }
     }
   ],
