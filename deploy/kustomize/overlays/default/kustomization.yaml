@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: bumblegrid-system
+
+resources:
+  - ../../base
+
+images:
+  - name: bumblegrid/bgscan
+    newTag: "0.2.0"

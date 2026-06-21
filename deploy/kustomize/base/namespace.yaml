@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bumblegrid-system
+  labels:
+    app.kubernetes.io/name: bgscan
+    app.kubernetes.io/component: scanner
