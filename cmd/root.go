@@ -16,6 +16,7 @@ import (
 	"github.com/BumbleGrid/bgscan/config"
 	"github.com/BumbleGrid/bgscan/internal/push"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -25,117 +26,134 @@ var configPath string
 
 var pushDryRun bool
 
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "Scan a Kubernetes cluster and emit or push BGSpec Floor 0 JSON",
+	Long: `Run scans workloads, services, ingresses, and optional Istio networking
+resources from a Kubernetes cluster and writes a BGSpec Floor 0 document
+(nodes + edges) that validates against bgspec.schema.json.`,
+	RunE: runScan,
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "bgscan",
 	Short: "Scan a Kubernetes cluster and emit BGSpec Floor 0 JSON",
-	Long: `bgscan reads workloads, services, ingresses, config/secret sources,
-PVCs, network policies, and autoscalers from a Kubernetes cluster and
-writes a BGSpec Floor 0 document (nodes + edges) that validates against
-bgspec.schema.json.`,
+	Long: `bgscan reads workloads, services, ingresses, and optional Istio
+networking resources from a Kubernetes cluster and writes a BGSpec Floor 0
+document (nodes + edges) that validates against bgspec.schema.json.
+
+Use "bgscan run" as the primary entry point; bare "bgscan" with flags remains
+supported for backward compatibility.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		return applyBGConfig(cmd)
 	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		kubeContexts, currentContext, err := loadKubeconfigContextNames(cfg.Kubeconfig)
-		if err != nil {
-			return fmt.Errorf("load kubeconfig: %w", err)
-		}
-		scanContexts := resolveScanContexts(cfg.Context, currentContext, kubeContexts)
-		var unreachable []unreachableContext
-		if cfg.Context == "" {
-			scanContexts, unreachable = filterReachableContexts(cmd.Context(), cfg.Kubeconfig, scanContexts)
-		}
-		if len(scanContexts) == 0 {
-			if allLocalhostConnectionRefused(unreachable) {
-				return fmt.Errorf("no reachable kubeconfig context to scan: cluster API servers use localhost addresses (127.0.0.1) that are not reachable from inside a Docker container; on Linux use docker run --network host")
-			}
-			return fmt.Errorf("no reachable kubeconfig context to scan")
-		}
-		trans := k8s.NewNodeTranslator()
-		extractedAt := time.Now().UTC().Format(time.RFC3339)
-		meta := node.Meta{ExtractorVersion: cfg.ExtractorVersion, ExtractedAt: extractedAt}
-		var content floor.Content
-		var extractErrors []error
-		for _, scanContext := range scanContexts {
-			clusterNodeID := clusterNodeIDFromContext(scanContext)
-			client, err := k8s.NewClient(cfg.Kubeconfig, scanContext)
-			if err != nil {
-				extractErrors = append(extractErrors, fmt.Errorf("context %q: %w", scanContext, err))
-				continue
-			}
-			res := k8s.NewEdgeResolver(k8s.EdgeResolverWithIstioLister(k8s.NewIstioCRDLister(client)))
-			reader := k8s.NewReader(client)
-			lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
-			tctx := k8s.K8sTranslateContext{
-				Floor:         0,
-				Meta:          meta,
-				ClusterNodeID: clusterNodeID,
-			}
-			partial, err := k8s.Floor0Extractor(cmd.Context(), lister, trans, res, tctx)
-			if err != nil {
-				extractErrors = append(extractErrors, fmt.Errorf("context %q: %w", scanContext, err))
-				continue
-			}
-			content.Nodes = append(content.Nodes, partial.Nodes...)
-			content.Edges = append(content.Edges, partial.Edges...)
-		}
-		if len(extractErrors) > 0 {
-			return fmt.Errorf("kubernetes extraction failed for %d of %d context(s): %w",
-				len(extractErrors), len(scanContexts), errors.Join(extractErrors...))
-		}
-		if len(content.Nodes) == 0 {
-			return fmt.Errorf("no cluster data extracted from %d context(s)", len(scanContexts))
-		}
-		if content.Label == "" {
-			content.Label = "Infrastructure"
-		}
-		if content.Description == "" {
-			content.Description = "Kubernetes cluster resources (Floor 0)."
-		}
-		content.Meta = &floor.BlockMeta{
-			ExtractedAt:      extractedAt,
-			ExtractorVersion: cfg.ExtractorVersion,
-		}
-		if err := config.ValidateAutoArrangement(cfg); err != nil {
-			return err
-		}
-		var payload []byte
-		var specDoc *graph.BGSpecDocument
-		if cfg.WholeDocument {
-			doc := k8s.NewBGSpecDocument(content)
-			if config.AutoArrangementStyleMapEnabled(cfg) {
-				styleMap := floor.AutoArrangeStyleMap(content)
-				doc.StyleMap = &styleMap
-			}
-			specDoc = &doc
-			payload, err = graph.MarshalBGSpecJSON(doc)
-		} else {
-			payload, err = graph.MarshalFloorContentJSON(content)
-		}
-		if err != nil {
-			return fmt.Errorf("marshal json: %w", err)
-		}
-		if err := writeLocalOutput(cfg.LocalOutput, payload); err != nil {
-			return err
-		}
-		if cfg.Output == config.OutputPush {
-			return runPushMode(cmd.Context(), cfg, pushDryRun, payload, content, specDoc, os.Stderr, push.NewHTTPPusher(nil))
-		}
-		if cfg.Output == "" || cfg.Output == "-" {
-			if _, werr := os.Stdout.Write(payload); werr != nil {
-				return werr
-			}
-			_, werr := os.Stdout.Write([]byte("\n"))
-			return werr
-		}
-		return os.WriteFile(cfg.Output, payload, 0o644)
-	},
+	RunE: runScan,
 }
 
 func init() {
-	flagSet := rootCmd.Flags()
+	registerScanFlags(rootCmd.PersistentFlags())
+	rootCmd.AddCommand(runCmd)
+}
+
+func runScan(cmd *cobra.Command, args []string) error {
+	kubeContexts, currentContext, err := loadKubeconfigContextNames(cfg.Kubeconfig)
+	if err != nil {
+		return fmt.Errorf("load kubeconfig: %w", err)
+	}
+	scanContexts := resolveScanContexts(cfg.Context, currentContext, kubeContexts)
+	var unreachable []unreachableContext
+	if cfg.Context == "" {
+		scanContexts, unreachable = filterReachableContexts(cmd.Context(), cfg.Kubeconfig, scanContexts)
+	}
+	if len(scanContexts) == 0 {
+		if allLocalhostConnectionRefused(unreachable) {
+			return fmt.Errorf("no reachable kubeconfig context to scan: cluster API servers use localhost addresses (127.0.0.1) that are not reachable from inside a Docker container; on Linux use docker run --network host")
+		}
+		return fmt.Errorf("no reachable kubeconfig context to scan")
+	}
+	trans := k8s.NewNodeTranslator()
+	extractedAt := time.Now().UTC().Format(time.RFC3339)
+	meta := node.Meta{ExtractorVersion: cfg.ExtractorVersion, ExtractedAt: extractedAt}
+	var content floor.Content
+	var extractErrors []error
+	for _, scanContext := range scanContexts {
+		clusterNodeID := clusterNodeIDFromContext(scanContext)
+		client, err := k8s.NewClient(cfg.Kubeconfig, scanContext)
+		if err != nil {
+			extractErrors = append(extractErrors, fmt.Errorf("context %q: %w", scanContext, err))
+			continue
+		}
+		res := k8s.NewEdgeResolver(k8s.EdgeResolverWithIstioLister(k8s.NewIstioCRDLister(client)))
+		reader := k8s.NewReader(client)
+		lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
+		tctx := k8s.K8sTranslateContext{
+			Floor:         0,
+			Meta:          meta,
+			ClusterNodeID: clusterNodeID,
+		}
+		partial, err := k8s.Floor0Extractor(cmd.Context(), lister, trans, res, tctx)
+		if err != nil {
+			extractErrors = append(extractErrors, fmt.Errorf("context %q: %w", scanContext, err))
+			continue
+		}
+		content.Nodes = append(content.Nodes, partial.Nodes...)
+		content.Edges = append(content.Edges, partial.Edges...)
+	}
+	if len(extractErrors) > 0 {
+		return fmt.Errorf("kubernetes extraction failed for %d of %d context(s): %w",
+			len(extractErrors), len(scanContexts), errors.Join(extractErrors...))
+	}
+	if len(content.Nodes) == 0 {
+		return fmt.Errorf("no cluster data extracted from %d context(s)", len(scanContexts))
+	}
+	if content.Label == "" {
+		content.Label = "Infrastructure"
+	}
+	if content.Description == "" {
+		content.Description = "Kubernetes cluster resources (Floor 0)."
+	}
+	content.Meta = &floor.BlockMeta{
+		ExtractedAt:      extractedAt,
+		ExtractorVersion: cfg.ExtractorVersion,
+	}
+	if err := config.ValidateAutoArrangement(cfg); err != nil {
+		return err
+	}
+	var payload []byte
+	var specDoc *graph.BGSpecDocument
+	if cfg.WholeDocument {
+		doc := k8s.NewBGSpecDocument(content)
+		if config.AutoArrangementStyleMapEnabled(cfg) {
+			styleMap := floor.AutoArrangeStyleMap(content)
+			doc.StyleMap = &styleMap
+		}
+		specDoc = &doc
+		payload, err = graph.MarshalBGSpecJSON(doc)
+	} else {
+		payload, err = graph.MarshalFloorContentJSON(content)
+	}
+	if err != nil {
+		return fmt.Errorf("marshal json: %w", err)
+	}
+	if err := writeLocalOutput(cfg.LocalOutput, payload); err != nil {
+		return err
+	}
+	if cfg.Output == config.OutputPush {
+		return runPushMode(cmd.Context(), cfg, pushDryRun, payload, content, specDoc, os.Stderr, push.NewHTTPPusher(nil))
+	}
+	if cfg.Output == "" || cfg.Output == "-" {
+		if _, werr := os.Stdout.Write(payload); werr != nil {
+			return werr
+		}
+		_, werr := os.Stdout.Write([]byte("\n"))
+		return werr
+	}
+	return os.WriteFile(cfg.Output, payload, 0o644)
+}
+
+func registerScanFlags(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&configPath, "config", "",
 		fmt.Sprintf("Path to %s (default: same directory as this binary, if that file exists)", config.BGConfigFileName))
 	flagSet.StringVar(&cfg.Kubeconfig, "kubeconfig", "",
