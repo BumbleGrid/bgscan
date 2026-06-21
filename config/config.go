@@ -7,6 +7,8 @@ const (
 	OutputPush = "push"
 )
 
+var DefaultExtractorVersion = "0.1.0"
+
 type Config struct {
 	Kubeconfig       string
 	Context          string

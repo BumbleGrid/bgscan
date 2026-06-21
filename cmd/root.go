@@ -146,7 +146,7 @@ func init() {
 		"Comma-separated namespaces to scan (default: all accessible)")
 	flagSet.StringVarP(&cfg.Output, "output", "o", "-",
 		`Output path for the BGSpec JSON document ("-" for stdout)`)
-	flagSet.StringVar(&cfg.ExtractorVersion, "extractor-version", "0.1.0",
+	flagSet.StringVar(&cfg.ExtractorVersion, "extractor-version", config.DefaultExtractorVersion,
 		"Value stamped into node/edge meta.extractorVersion")
 	flagSet.BoolVar(&cfg.WholeDocument, "whole-document", false,
 		"Emit full BGSpec document (floors 0–3) instead of floor 0 slice only")

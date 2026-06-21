@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bgscan
+  labels:
+    app.kubernetes.io/name: bgscan
+    app.kubernetes.io/component: scanner
+spec:
+  schedule: "0 6,18 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bgscan
+            app.kubernetes.io/component: scanner
+        spec:
+          serviceAccountName: bgscan
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: bgscan
+              image: bumblegrid/bgscan:0.2.0
+              imagePullPolicy: IfNotPresent
+              command:
+                - bgscan
+                - run
+                - --config
+                - /etc/bgscan/bgscan.yaml
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              volumeMounts:
+                - name: bgscan-config
+                  mountPath: /etc/bgscan
+                  readOnly: true
+          volumes:
+            - name: bgscan-config
+              secret:
+                secretName: bgscan-config
