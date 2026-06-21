@@ -2,9 +2,213 @@
 
 Scan a Kubernetes cluster and emit a BGSpec Floor 0 JSON document. Optionally push the extraction to a BumbleGrid backend and save a local copy of the JSON.
 
-## Docker
+**Recommended:** deploy bgscan **inside your cluster** with the kustomize bundle below. BumbleGrid never receives your kubeconfig — the scanner runs with in-cluster ServiceAccount credentials and pushes results over HTTPS.
 
-The image packages the `bgscan` CLI. Use it to scan a cluster, push the result to your BumbleGrid API (same as `output: push` on the CLI), and write the JSON to a mounted volume.
+A Helm chart is planned for a later release; this repository ships kustomize only for now.
+
+## Deploy to Kubernetes (kustomize)
+
+Run bgscan as a CronJob in your cluster. It scans Floor 0 on a schedule and pushes extractions to BumbleGrid. During onboarding, run a one-off Job first so you do not wait for the next CronJob tick.
+
+### Prerequisites
+
+- Kubernetes cluster (1.24+) with `kubectl` configured for cluster-admin or equivalent install permissions
+- Outbound HTTPS from the cluster to your BumbleGrid API endpoint (see `endpoint` in `bgscan.yaml`; production default is `https://api.bumblegrid.tech`)
+- A BumbleGrid organization with a cluster connection created in onboarding or cluster settings
+- Ability to pull `bumblegrid/bgscan` from Docker Hub (see [Troubleshooting](#troubleshooting) if pulls are rate-limited)
+
+### 1. Connect a cluster in BumbleGrid
+
+In the BumbleGrid UI, complete **Connect cluster** (onboarding step 5 or your org’s cluster settings). Save the cluster connection and note the one-time push API key — it is shown only at creation time. If you lose it, an org admin can mint a replacement token from organization settings.
+
+BumbleGrid stores cluster metadata and the push API key reference; it does **not** store kubeconfig or in-cluster credentials.
+
+### 2. Download `bgscan.yaml`
+
+Download the generated `bgscan.yaml` from the UI. It includes your org, document, cluster slugs, `output: push`, API endpoint, and `api_key`. Keep this file off git and out of ticket systems — treat it like a secret.
+
+Expected shape (placeholders shown):
+
+```yaml
+org: "your-org-slug"
+document: "your-document-slug"
+cluster:
+  name: "prod-eu-west-1"
+  slug: "prod-eu-west-1"
+  environment: "production"
+  namespaces: []
+kubeconfig: ""
+context: ""
+namespaces: []
+extractor_version: ""
+output: "push"
+endpoint: "https://api.bumblegrid.tech"
+api_key: "bg_sk_..."
+```
+
+Empty `kubeconfig` and `context` mean in-cluster authentication via the pod ServiceAccount.
+
+### 3. Apply namespace, RBAC, and CronJob
+
+Clone or check out this repository (or copy `deploy/kustomize/` into your GitOps repo), then apply the default overlay:
+
+```bash
+kubectl apply -k deploy/kustomize/overlays/default
+```
+
+This creates:
+
+| Resource | Name | Purpose |
+|----------|------|---------|
+| Namespace | `bumblegrid-system` | Dedicated install namespace |
+| ServiceAccount | `bgscan` | Pod identity |
+| ClusterRole + ClusterRoleBinding | `bgscan` | Read-only scan permissions |
+| Secret | `bgscan-config` | Placeholder config (replace in step 4) |
+| CronJob | `bgscan` | Twice-daily scheduled scan |
+| Job | `bgscan-first-run` | One-off first scan (wait until step 5) |
+
+The bundle includes `job-manual.yaml`. If that Job starts before the Secret holds your real `bgscan.yaml`, it will fail — remove it and re-run after step 4:
+
+```bash
+kubectl delete job bgscan-first-run -n bumblegrid-system --ignore-not-found
+```
+
+The pinned container image tag lives in `deploy/kustomize/overlays/default/kustomization.yaml` (`images.newTag`) — treat that file as the source of truth for the image version, not this README.
+
+### 4. Create the Secret from `bgscan.yaml`
+
+Replace the placeholder Secret with your SaaS-generated file:
+
+```bash
+kubectl create secret generic bgscan-config \
+  --from-file=bgscan.yaml=./bgscan.yaml \
+  -n bumblegrid-system \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Do not commit `bgscan.yaml` or rendered Secret manifests to git. Encrypt Secrets at rest using your cluster’s etcd encryption or KMS integration — that is the cluster operator’s responsibility.
+
+To rotate the API key later, update the Secret the same way; the next Job or CronJob run picks up the new key automatically.
+
+### 5. Run the first scan
+
+With the real Secret in place, start the one-off Job:
+
+```bash
+kubectl apply -f deploy/kustomize/base/job-manual.yaml -n bumblegrid-system
+```
+
+If `bgscan-first-run` already exists from step 3, delete it first (Jobs are immutable):
+
+```bash
+kubectl delete job bgscan-first-run -n bumblegrid-system --ignore-not-found
+kubectl apply -f deploy/kustomize/base/job-manual.yaml -n bumblegrid-system
+```
+
+Alternatively, create a Job from the CronJob template:
+
+```bash
+kubectl create job "bgscan-manual-$(date +%s)" \
+  --from=cronjob/bgscan \
+  -n bumblegrid-system
+```
+
+Watch progress:
+
+```bash
+kubectl logs -n bumblegrid-system -l app.kubernetes.io/name=bgscan --tail=100 -f
+kubectl get jobs -n bumblegrid-system
+```
+
+If the Job fails, see [Troubleshooting](#troubleshooting) before retrying.
+
+### 6. Confirm extraction in BumbleGrid
+
+Open **Extraction status** in onboarding (step 6) or your document’s extraction view. BumbleGrid detects the first push automatically — there is no separate “test connection” API. Once the push lands, continue review and commit in the UI.
+
+### 7. Ongoing sync (CronJob)
+
+The CronJob `bgscan` runs **`bgscan run --config /etc/bgscan/bgscan.yaml`** on schedule **`0 6,18 * * *`** (06:00 and 18:00 UTC). `concurrencyPolicy: Forbid` prevents overlapping scans.
+
+Suspend scheduled runs (maintenance):
+
+```bash
+kubectl patch cronjob bgscan -n bumblegrid-system -p '{"spec":{"suspend":true}}'
+```
+
+Resume:
+
+```bash
+kubectl patch cronjob bgscan -n bumblegrid-system -p '{"spec":{"suspend":false}}'
+```
+
+### Customization
+
+Patch the overlay or add your own kustomize layer:
+
+| Setting | Location | Notes |
+|---------|----------|-------|
+| Image tag | `deploy/kustomize/overlays/default/kustomization.yaml` → `images.newTag` | Match a published tag from [Publishing](#publishing-maintainers) |
+| Namespace | overlay `namespace:` field + subject namespace in binding | Default `bumblegrid-system` |
+| Cron schedule | `deploy/kustomize/base/cronjob.yaml` → `spec.schedule` | Cron syntax |
+| CPU/memory | `cronjob.yaml` / `job-manual.yaml` pod `resources` | Raise limits on large clusters |
+| Scan timeout | `activeDeadlineSeconds` on Job/CronJob | Default 1800s (30 minutes) |
+| Namespace filter | `namespaces` in `bgscan.yaml` | Empty list scans all accessible namespaces |
+
+### RBAC reference
+
+The `bgscan` ClusterRole grants read-only verbs **`get`**, **`list`**, and **`watch`** on the resources bgscan needs for Floor 0 extraction. There is no access to Secrets, ConfigMaps, Pods, Nodes, ReplicaSets, or wildcard `*`.
+
+| API group | Resources | Scope |
+|-----------|-----------|-------|
+| `""` (core) | `namespaces` | cluster |
+| `""` (core) | `services` | namespaced |
+| `apps` | `deployments`, `statefulsets`, `daemonsets` | namespaced |
+| `batch` | `cronjobs`, `jobs` | namespaced |
+| `networking.k8s.io` | `ingresses` | namespaced |
+| `networking.istio.io` | `virtualservices`, `destinationrules`, `serviceentries` | namespaced (when Istio CRDs exist) |
+| (non-resource) | `/api`, `/apis`, `/api/*`, `/apis/*` | discovery for Istio presence check |
+
+This is least-privilege relative to the v1 Floor 0 graph: workload and ingress topology, optional Istio routing objects, and Services. ConfigMaps, Secrets, PVCs, NetworkPolicies, HPAs, and ReplicaSets are **not** extracted in v1 — the emitted graph is workload-focused.
+
+The ServiceAccount in `bumblegrid-system` cannot read other Secrets cluster-wide.
+
+### Troubleshooting
+
+| Symptom | Likely cause | What to do |
+|---------|--------------|------------|
+| `Forbidden` listing resources | RBAC not applied or wrong ServiceAccount | Verify `ClusterRoleBinding` subject is `bumblegrid-system/bgscan`; re-apply kustomize |
+| `Forbidden` on `/apis` discovery | Missing discovery rules | Ensure `clusterrole.yaml` non-resource URLs are present |
+| Push fails with connection timeout | Egress blocked to BumbleGrid API | Allow HTTPS to `endpoint` from worker nodes; configure proxy if required |
+| HTTP 401/403 on push | Invalid or rotated API key | Update Secret from a fresh `bgscan.yaml` or mint a new org token |
+| `ImagePullBackOff` | Docker Hub rate limit or private registry | Add `imagePullSecrets` or mirror `bumblegrid/bgscan`; see [Publishing](#publishing-maintainers) |
+| Job exceeds deadline | Very large cluster | Increase `activeDeadlineSeconds` and pod memory in an overlay |
+| CronJob never runs | Suspended or controller issue | `kubectl get cronjob bgscan -n bumblegrid-system`; check `suspend` and controller logs |
+
+Inspect pod logs:
+
+```bash
+kubectl logs -n bumblegrid-system -l app.kubernetes.io/name=bgscan --tail=200
+```
+
+---
+
+## Local CLI (development and CI)
+
+For ad-hoc scans from your workstation or CI, build or install the binary and run:
+
+```bash
+go build -o bgscan .
+./bgscan run --config ./bgscan.yaml
+```
+
+Copy `bgconfig.sample.yaml` to `bgconfig.yaml` beside the binary, or pass `--config /path/to/bgconfig.yaml`. The root command without `run` still works for backward compatibility, but **`bgscan run`** is the documented entry point (matches in-cluster manifests).
+
+Multi-kubeconfig fan-out and localhost clusters (kind, minikube) are local-CLI concerns. In-cluster deploy always scans the local cluster with an empty context.
+
+## Docker (development and CI)
+
+The image packages the `bgscan` CLI. Use it to scan a cluster, push the result to your BumbleGrid API (same as `output: push` in config), and write JSON to a mounted volume.
 
 ### Build
 
@@ -35,7 +239,7 @@ Mount:
 docker run --rm --network host \
   -v "$HOME/.kube/config:/kube/config:ro" \
   -v "$(pwd)/output:/output" \
-  bgscan:latest \
+  bgscan:latest run \
   --kubeconfig /kube/config \
   --output /output/bgdoc.json
 ```
@@ -48,14 +252,9 @@ mkdir -p output
 docker run --rm --network host \
   -v "$HOME/.kube/config:/kube/config:ro" \
   -v "$(pwd)/output:/output" \
-  bgscan:latest \
-  --kubeconfig /kube/config \
-  --output push \
-  --endpoint https://api.bumblegrid.tech \
-  --org your-org-slug \
-  --document your-document-slug \
-  --cluster your-cluster-slug \
-  --api-key "bg_sk_..." \
+  -v "$(pwd)/bgscan.yaml:/config/bgscan.yaml:ro" \
+  bgscan:latest run \
+  --config /config/bgscan.yaml \
   --local-output /output/bgdoc.json
 ```
 
@@ -65,7 +264,7 @@ Optional: put the same settings in `bgconfig.yaml` and pass `--config /path/to/b
 
 | Flag | Purpose |
 |------|---------|
-| `--config` | Path to `bgconfig.yaml` inside the container |
+| `--config` | Path to `bgscan.yaml` / `bgconfig.yaml` inside the container |
 | `--kubeconfig` | Path to kubeconfig (default: in-cluster, then `~/.kube/config`) |
 | `--context` | Single kubeconfig context to scan |
 | `--namespaces` | Comma-separated namespace filter |
@@ -81,19 +280,10 @@ Omit push settings and set `output` to a path inside a mounted volume. For local
 docker run --rm --network host \
   -v "$HOME/.kube/config:/kube/config:ro" \
   -v "$(pwd)/output:/output" \
-  bgscan:latest \
+  bgscan:latest run \
   --kubeconfig /kube/config \
   --output /output/bgdoc.json
 ```
-
-## CLI (without Docker)
-
-```bash
-go build -o bgscan .
-./bgscan --help
-```
-
-Copy `bgconfig.sample.yaml` to `bgconfig.yaml` beside the binary, or pass `--config /path/to/bgconfig.yaml`.
 
 ## Publishing (maintainers)
 
@@ -115,11 +305,11 @@ Published images live on Docker Hub at `bumblegrid/bgscan`. Builds are triggered
 
 ```bash
 docker pull bumblegrid/bgscan:0.2.0
-docker run --rm bumblegrid/bgscan:0.2.0 --help
+docker run --rm bumblegrid/bgscan:0.2.0 run --help
 ```
 
-The image entrypoint is `bgscan` with no default command args — in-cluster CronJob/Job manifests supply `run --config …` (see deploy docs in Step 04).
+The image entrypoint is `bgscan` with no default command args — in-cluster CronJob and Job manifests supply `run --config …`.
 
-When releasing a new tag, bump the pinned image tag in the kustomize base (Step 04). Security-conscious deployments can pin by digest instead of tag.
+When releasing a new tag, bump `images.newTag` in `deploy/kustomize/overlays/default/kustomization.yaml`. Security-conscious deployments can pin by digest instead of tag.
 
-Docker Hub applies pull rate limits to anonymous users; document cluster image-pull secrets or Docker Hub login if customers hit limits.
+Docker Hub applies pull rate limits to anonymous users; document cluster `imagePullSecrets` or Docker Hub login if customers hit limits.
