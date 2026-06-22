@@ -7,7 +7,7 @@ const (
 	OutputPush = "push"
 )
 
-var DefaultExtractorVersion = "0.1.0"
+var DefaultExtractorVersion = "__BGSCAN_VERSION__"
 
 type Config struct {
 	Kubeconfig       string

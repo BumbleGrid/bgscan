@@ -1,0 +1,4 @@
+config/config.go
+deploy/kustomize/base/cronjob.yaml
+deploy/kustomize/base/job-manual.yaml
+deploy/kustomize/overlays/default/kustomization.yaml
