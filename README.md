@@ -73,7 +73,7 @@ The bundle includes `job-manual.yaml`. If that Job starts before the Secret hold
 kubectl delete job bgscan-first-run -n bumblegrid-system --ignore-not-found
 ```
 
-The pinned container image tag lives in `deploy/kustomize/overlays/default/kustomization.yaml` (`images.newTag`) — treat that file as the source of truth for the image version, not this README.
+The pinned container image tag lives in `deploy/kustomize/overlays/default/kustomization.yaml` (`images.newTag`). On `main` that value is the placeholder `__BGSCAN_VERSION__`; the [Publish container image](.github/workflows/publish-image.yml) workflow substitutes it (and every other entry in `scripts/release-version-files.txt`) when cutting a release tag.
 
 ### 4. Create the Secret from `bgscan.yaml`
 
@@ -148,7 +148,7 @@ Patch the overlay or add your own kustomize layer:
 
 | Setting | Location | Notes |
 |---------|----------|-------|
-| Image tag | `deploy/kustomize/overlays/default/kustomization.yaml` → `images.newTag` | Match a published tag from [Publishing](#publishing-maintainers) |
+| Image tag | `deploy/kustomize/overlays/default/kustomization.yaml` → `images.newTag` | Published tags from [Publishing](#publishing-maintainers); `main` holds `__BGSCAN_VERSION__` until release |
 | Namespace | overlay `namespace:` field + subject namespace in binding | Default `bumblegrid-system` |
 | Cron schedule | `deploy/kustomize/base/cronjob.yaml` → `spec.schedule` | Cron syntax |
 | CPU/memory | `cronjob.yaml` / `job-manual.yaml` pod `resources` | Raise limits on large clusters |
@@ -300,16 +300,19 @@ Published images live on Docker Hub at `bumblegrid/bgscan`. Builds are triggered
 ### Publish a version
 
 1. Open **Actions → Publish container image → Run workflow** in the bgscan repo.
-2. Set **image_tag** to an immutable semver (e.g. `0.2.0`). Optionally enable **also_tag_latest** to update the moving `latest` pointer.
-3. After the workflow succeeds, verify:
+2. Set **image_tag** to an immutable semver (e.g. `v1.0.0-beta.5`). Optionally enable **also_tag_latest** to update the moving `latest` pointer.
+
+The workflow replaces `__BGSCAN_VERSION__` in every file listed in `scripts/release-version-files.txt`, commits that tree, builds the image, pushes to Docker Hub, and creates the matching git tag. The tagged commit carries the real version; `main` keeps the placeholder.
+
+3. After the workflow succeeds, verify (substitute your tag):
 
 ```bash
-docker pull bumblegrid/bgscan:v1.0.0-beta.4
-docker run --rm bumblegrid/bgscan:v1.0.0-beta.4 run --help
+docker pull bumblegrid/bgscan:<tag>
+docker run --rm bumblegrid/bgscan:<tag> run --help
 ```
 
 The image entrypoint is `bgscan` with no default command args — in-cluster CronJob and Job manifests supply `run --config …`.
 
-When releasing a new tag, bump `images.newTag` in `deploy/kustomize/overlays/default/kustomization.yaml`. Security-conscious deployments can pin by digest instead of tag.
+Security-conscious deployments can pin by digest instead of tag.
 
 Docker Hub applies pull rate limits to anonymous users; document cluster `imagePullSecrets` or Docker Hub login if customers hit limits.

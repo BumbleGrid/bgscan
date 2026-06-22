@@ -8,4 +8,4 @@ resources:
 
 images:
   - name: bumblegrid/bgscan
-    newTag: "0.2.0"
+    newTag: "__BGSCAN_VERSION__"

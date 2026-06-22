@@ -9,7 +9,7 @@ on:
         type: string
         default: main
       image_tag:
-        description: Immutable version tag (e.g. 0.2.0)
+        description: Immutable version tag (e.g. v1.0.0-beta.5)
         required: true
         type: string
       also_tag_latest:
@@ -33,6 +33,23 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
           fetch-depth: 0
+
+      - name: Substitute release version
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          bash scripts/substitute-version.sh "${IMAGE_TAG}"
+
+      - name: Commit release tree
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "release: ${IMAGE_TAG}"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
