@@ -304,8 +304,8 @@ Published images live on Docker Hub at `bumblegrid/bgscan`. Builds are triggered
 3. After the workflow succeeds, verify:
 
 ```bash
-docker pull bumblegrid/bgscan:0.2.0
-docker run --rm bumblegrid/bgscan:0.2.0 run --help
+docker pull bumblegrid/bgscan:v1.0.0-beta.4
+docker run --rm bumblegrid/bgscan:v1.0.0-beta.4 run --help
 ```
 
 The image entrypoint is `bgscan` with no default command args — in-cluster CronJob and Job manifests supply `run --config …`.
