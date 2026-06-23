@@ -2,9 +2,34 @@ package cmd
 
 import (
 	"bytes"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestResolveScanContexts_inClusterUsesImplicitContext(t *testing.T) {
+	got := resolveScanContexts("", "", nil)
+	want := []string{""}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("resolveScanContexts() = %v, want %v", got, want)
+	}
+}
+
+func TestResolveScanContexts_prefersKindContexts(t *testing.T) {
+	got := resolveScanContexts("", "", []string{"prod", "kind-dev", "kind-staging"})
+	want := []string{"kind-dev", "kind-staging"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("resolveScanContexts() = %v, want %v", got, want)
+	}
+}
+
+func TestClusterNodeIDForScan_usesClusterSlugWhenContextEmpty(t *testing.T) {
+	got := clusterNodeIDForScan("", "complex")
+	want := "cluster/complex"
+	if got != want {
+		t.Fatalf("clusterNodeIDForScan() = %q, want %q", got, want)
+	}
+}
 
 func TestRootHelp_listsRunSubcommand(t *testing.T) {
 	rootCmd.SetArgs([]string{"--help"})

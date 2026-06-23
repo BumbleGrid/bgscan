@@ -79,7 +79,7 @@ func runScan(cmd *cobra.Command, args []string) error {
 	var content floor.Content
 	var extractErrors []error
 	for _, scanContext := range scanContexts {
-		clusterNodeID := clusterNodeIDFromContext(scanContext)
+		clusterNodeID := clusterNodeIDForScan(scanContext, cfg.Cluster)
 		client, err := k8s.NewClient(cfg.Kubeconfig, scanContext)
 		if err != nil {
 			extractErrors = append(extractErrors, fmt.Errorf("context %q: %w", scanContext, err))
@@ -290,7 +290,18 @@ func resolveScanContexts(explicit, current string, allNames []string) []string {
 	if current != "" {
 		return []string{current}
 	}
+	if len(allNames) == 0 {
+		return []string{""}
+	}
 	return nil
+}
+
+func clusterNodeIDForScan(contextName, clusterSlug string) string {
+	nodeID := clusterNodeIDFromContext(contextName)
+	if nodeID == "cluster/" && clusterSlug != "" {
+		return "cluster/" + clusterSlug
+	}
+	return nodeID
 }
 
 func kindContextNames(allNames []string) []string {
