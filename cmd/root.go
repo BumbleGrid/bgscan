@@ -283,6 +283,9 @@ func resolveScanContexts(explicit, current string, allNames []string) []string {
 	if explicit != "" {
 		return []string{explicit}
 	}
+	if inClusterConfigActive() {
+		return []string{""}
+	}
 	kindContexts := kindContextNames(allNames)
 	if len(kindContexts) > 0 {
 		return kindContexts
@@ -294,6 +297,14 @@ func resolveScanContexts(explicit, current string, allNames []string) []string {
 		return []string{""}
 	}
 	return nil
+}
+
+func inClusterConfigActive() bool {
+	if os.Getenv("KUBERNETES_SERVICE_HOST") == "" {
+		return false
+	}
+	_, err := os.Stat("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	return err == nil
 }
 
 func clusterNodeIDForScan(contextName, clusterSlug string) string {

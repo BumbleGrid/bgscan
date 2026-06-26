@@ -10,7 +10,7 @@ SCENARIOS := $(sort $(foreach d,$(CLUSTER_SCENARIO_DIRS),$(if $(wildcard $(d)/sc
 
 .PHONY: help kind-list \
 	kind-apply kind-apply-recreate kind-delete kind-delete-cluster \
-	kind-apply-all kind-delete-all \
+	kind-apply-all kind-delete-all kind-delete-cluster-all \
 	FORCE
 
 .DEFAULT_GOAL := help
@@ -36,6 +36,7 @@ help:
 	@echo "All scenarios (sequential):"
 	@echo "  make kind-apply-all"
 	@echo "  make kind-delete-all"
+	@echo "  make kind-delete-cluster-all   # delete manifests + destroy all scenario clusters"
 	@echo ""
 	@echo "Paths: $(TESTDATA_DIR)/clusters/simple, $(TESTDATA_DIR)/clusters/complex"
 
@@ -63,6 +64,9 @@ kind-apply-all:
 
 kind-delete-all:
 	@set -e; for s in $(SCENARIOS); do "$(SCENARIOS_SH)" delete "$$s"; done
+
+kind-delete-cluster-all:
+	@set -e; for s in $(SCENARIOS); do "$(SCENARIOS_SH)" delete "$$s" --delete-cluster; done
 
 define SCENARIO_KIND_RULES
 .PHONY: kind-apply-$(1) kind-apply-recreate-$(1) kind-delete-$(1) kind-delete-cluster-$(1)

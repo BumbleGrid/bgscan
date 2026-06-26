@@ -8,10 +8,19 @@ import (
 )
 
 func TestResolveScanContexts_inClusterUsesImplicitContext(t *testing.T) {
+	t.Setenv("KUBERNETES_SERVICE_HOST", "")
 	got := resolveScanContexts("", "", nil)
 	want := []string{""}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("resolveScanContexts() = %v, want %v", got, want)
+	}
+}
+
+func TestResolveScanContexts_nonKindContextsWithoutInClusterReturnsNil(t *testing.T) {
+	t.Setenv("KUBERNETES_SERVICE_HOST", "")
+	got := resolveScanContexts("", "", []string{"prod", "staging"})
+	if got != nil {
+		t.Fatalf("resolveScanContexts() = %v, want nil", got)
 	}
 }
 
