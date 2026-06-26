@@ -22,4 +22,4 @@ patches:
 
 images:
   - name: bumblegrid/bgscan
-    newTag: "__BGSCAN_VERSION__"
+    newTag: "v1.0.0-beta.7"
