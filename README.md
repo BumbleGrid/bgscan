@@ -40,6 +40,11 @@ cluster:
 kubeconfig: ""
 context: ""
 namespaces: []
+ignore_namespaces:
+  - kube-system
+  - bumblegrid-system
+  # ... platform defaults from config/default_scan_filters.yaml
+ignore_workloads: []
 extractor_version: ""
 output: "push"
 endpoint: "https://api.bumblegrid.tech"
@@ -47,6 +52,8 @@ api_key: "bg_sk_..."
 ```
 
 Empty `kubeconfig` and `context` mean in-cluster authentication via the pod ServiceAccount.
+
+SaaS-generated `bgscan.yaml` includes `ignore_namespaces` and `ignore_workloads` from the pinned bgscan release defaults. Edit those keys in the in-cluster Secret to customize what bgscan skips (same as rotating the API key).
 
 ### 3. Apply namespace and create the Secret
 
@@ -141,7 +148,21 @@ Patch the overlay or add your own kustomize layer:
 | Cron schedule | `deploy/kustomize/base/cronjob.yaml` → `spec.schedule` | Cron syntax |
 | CPU/memory | `cronjob.yaml` / `job-manual.yaml` pod `resources` | Raise limits on large clusters |
 | Scan timeout | `activeDeadlineSeconds` on Job/CronJob | Default 1800s (30 minutes) |
-| Namespace filter | `namespaces` in `bgscan.yaml` | Empty list scans all accessible namespaces |
+| Namespace allowlist | `namespaces` in `bgscan.yaml` | Empty list = all accessible namespaces (before ignores) |
+| Namespace denylist | `ignore_namespaces` in `bgscan.yaml` | Omitted = built-in platform defaults; `[]` = scan everything |
+| Workload denylist | `ignore_workloads` in `bgscan.yaml` | Omitted = no workload filtering; glob patterns `namespace/kind/name` |
+
+Default `ignore_namespaces` live in [`config/default_scan_filters.yaml`](config/default_scan_filters.yaml) (also vendored into the BumbleGrid monorepo when `BGSCAN_DEPLOY_REF` bumps). To scan platform namespaces too, set `ignore_namespaces: []`. Clusters using `ingress-nginx` or similar instead of a namespace literally named `ingress` should edit that entry.
+
+Workload pattern examples (Floor 0 kinds: `deployments`, `statefulsets`, `daemonsets`, `cronjobs`, `jobs`, `services`, `ingresses`):
+
+| Pattern | Matches |
+|---------|---------|
+| `payments/deployments/eppo*` | Deployments named `eppo…` in `payments` |
+| `payments/*/eppo-*` | Any Floor 0 kind with name `eppo-…` in `payments` |
+| `*/services/kube-dns` | `kube-dns` Service in any scanned namespace |
+
+CLI overrides: `--ignore-namespaces`, `--ignore-workloads` (comma-separated).
 
 ### RBAC reference
 
@@ -255,7 +276,9 @@ Optional: put the same settings in `bgconfig.yaml` and pass `--config /path/to/b
 | `--config` | Path to `bgscan.yaml` / `bgconfig.yaml` inside the container |
 | `--kubeconfig` | Path to kubeconfig (default: in-cluster, then `~/.kube/config`) |
 | `--context` | Single kubeconfig context to scan |
-| `--namespaces` | Comma-separated namespace filter |
+| `--namespaces` | Comma-separated namespace allowlist |
+| `--ignore-namespaces` | Comma-separated namespace denylist (default: built-in platform list) |
+| `--ignore-workloads` | Comma-separated workload deny patterns (`namespace/kind/name` globs) |
 | `--local-output` | Write the JSON to this path (in addition to push when `output: push`) |
 | `--whole-document` | Emit full BGSpec document instead of floor 0 only |
 | `--push-dry-run` | Print the resolved push request without sending it |
