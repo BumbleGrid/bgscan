@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -298,5 +299,31 @@ ignore_namespaces: []
 	}
 	if cfg.IgnoreWorkloads == nil || len(cfg.IgnoreWorkloads) != 0 {
 		t.Fatalf("IgnoreWorkloads = %v, want empty slice", cfg.IgnoreWorkloads)
+	}
+}
+
+func TestLoadBGConfig_ignoreWorkloadsExplicitUsesYAMLList(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bgconfig.yaml")
+	content := `kubeconfig: ""
+context: ""
+namespaces: []
+output: "-"
+extractor_version: "0.0.0"
+ignore_namespaces: []
+ignore_workloads:
+  - "apps/deployments/noise*"
+  - "*/services/kube-dns"
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadBGConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"apps/deployments/noise*", "*/services/kube-dns"}
+	if !reflect.DeepEqual(cfg.IgnoreWorkloads, want) {
+		t.Fatalf("IgnoreWorkloads = %v, want %v", cfg.IgnoreWorkloads, want)
 	}
 }
