@@ -13,6 +13,8 @@ type Config struct {
 	Kubeconfig       string
 	Context          string
 	Namespaces       []string
+	IgnoreNamespaces []string
+	IgnoreWorkloads  []string
 	Output           string
 	ExtractorVersion string
 	WholeDocument    bool

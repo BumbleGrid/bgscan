@@ -88,6 +88,12 @@ func runScan(cmd *cobra.Command, args []string) error {
 		res := k8s.NewEdgeResolver(k8s.EdgeResolverWithIstioLister(k8s.NewIstioCRDLister(client)))
 		reader := k8s.NewReader(client)
 		lister := k8s.NewListerForNamespaces(reader, cfg.Namespaces)
+		warnNamespaceAllowIgnoreOverlap(cfg.Namespaces, cfg.IgnoreNamespaces)
+		scanFilter, err := k8s.ParseScanFilter(cfg.IgnoreNamespaces, cfg.IgnoreWorkloads)
+		if err != nil {
+			return fmt.Errorf("scan filters: %w", err)
+		}
+		lister = k8s.NewListerWithScanFilter(lister, scanFilter)
 		tctx := k8s.K8sTranslateContext{
 			Floor:         0,
 			Meta:          meta,
@@ -162,6 +168,10 @@ func registerScanFlags(flagSet *pflag.FlagSet) {
 		"Kubeconfig context name (default: all kind-* contexts, or current context if none)")
 	flagSet.StringSliceVar(&cfg.Namespaces, "namespaces", nil,
 		"Comma-separated namespaces to scan (default: all accessible)")
+	flagSet.StringSliceVar(&cfg.IgnoreNamespaces, "ignore-namespaces", nil,
+		"Comma-separated namespaces to exclude from scanning (default: built-in platform list)")
+	flagSet.StringSliceVar(&cfg.IgnoreWorkloads, "ignore-workloads", nil,
+		`Comma-separated workload deny patterns as namespace/kind/name globs (default: none)`)
 	flagSet.StringVarP(&cfg.Output, "output", "o", "-",
 		`Output path for the BGSpec JSON document ("-" for stdout)`)
 	flagSet.StringVar(&cfg.ExtractorVersion, "extractor-version", config.DefaultExtractorVersion,
@@ -196,64 +206,104 @@ func applyBGConfig(cmd *cobra.Command) error {
 	if err != nil {
 		return fmt.Errorf("resolve config path: %w", err)
 	}
-	if path == "" {
-		return nil
-	}
-	if _, err := os.Stat(path); err != nil {
-		if configPath != "" {
-			return fmt.Errorf("config file %q: %w", path, err)
+	configLoaded := false
+	if path != "" {
+		if _, statErr := os.Stat(path); statErr != nil {
+			if configPath != "" {
+				return fmt.Errorf("config file %q: %w", path, statErr)
+			}
+		} else {
+			fileCfg, loadErr := config.LoadBGConfig(path)
+			if loadErr != nil {
+				return loadErr
+			}
+			configLoaded = true
+			fs := cmd.Flags()
+			if !fs.Changed("kubeconfig") {
+				cfg.Kubeconfig = fileCfg.Kubeconfig
+			}
+			if !fs.Changed("context") {
+				cfg.Context = fileCfg.Context
+			}
+			if !fs.Changed("namespaces") {
+				cfg.Namespaces = fileCfg.Namespaces
+			}
+			if !fs.Changed("ignore-namespaces") {
+				cfg.IgnoreNamespaces = fileCfg.IgnoreNamespaces
+			}
+			if !fs.Changed("ignore-workloads") {
+				cfg.IgnoreWorkloads = fileCfg.IgnoreWorkloads
+			}
+			if !fs.Changed("output") && !fs.Changed("o") {
+				cfg.Output = fileCfg.Output
+			}
+			if !fs.Changed("extractor-version") {
+				cfg.ExtractorVersion = fileCfg.ExtractorVersion
+			}
+			if !fs.Changed("whole-document") {
+				cfg.WholeDocument = fileCfg.WholeDocument
+			}
+			if !fs.Changed("auto-arrangement") {
+				cfg.AutoArrangement = fileCfg.AutoArrangement
+			}
+			if !fs.Changed("endpoint") {
+				cfg.Endpoint = fileCfg.Endpoint
+			}
+			if !fs.Changed("org") {
+				cfg.Org = fileCfg.Org
+			}
+			if !fs.Changed("document") {
+				cfg.Document = fileCfg.Document
+			}
+			if !fs.Changed("cluster") {
+				cfg.Cluster = fileCfg.Cluster
+			}
+			if !fs.Changed("api-key") {
+				cfg.APIKey = fileCfg.APIKey
+			}
+			if !fs.Changed("idempotency") {
+				cfg.Idempotency = fileCfg.Idempotency
+			}
+			if !fs.Changed("local-output") {
+				cfg.LocalOutput = fileCfg.LocalOutput
+			}
+			cfg.LocalValidate = fileCfg.LocalValidate
 		}
-		return nil
 	}
-	fileCfg, err := config.LoadBGConfig(path)
+	return applyDefaultScanFilters(cmd, configLoaded)
+}
+
+func applyDefaultScanFilters(cmd *cobra.Command, configLoaded bool) error {
+	if configLoaded {
+		return config.ValidateScanFilters(cfg.IgnoreNamespaces, cfg.IgnoreWorkloads)
+	}
+	fs := cmd.Flags()
+	defaults, err := config.LoadDefaultScanFilters()
 	if err != nil {
 		return err
 	}
-	fs := cmd.Flags()
-	if !fs.Changed("kubeconfig") {
-		cfg.Kubeconfig = fileCfg.Kubeconfig
+	if !fs.Changed("ignore-namespaces") {
+		cfg.IgnoreNamespaces = defaults.IgnoreNamespaces
 	}
-	if !fs.Changed("context") {
-		cfg.Context = fileCfg.Context
+	if !fs.Changed("ignore-workloads") {
+		cfg.IgnoreWorkloads = defaults.IgnoreWorkloads
 	}
-	if !fs.Changed("namespaces") {
-		cfg.Namespaces = fileCfg.Namespaces
+	return config.ValidateScanFilters(cfg.IgnoreNamespaces, cfg.IgnoreWorkloads)
+}
+
+func warnNamespaceAllowIgnoreOverlap(allow, deny []string) {
+	if len(allow) == 0 {
+		return
 	}
-	if !fs.Changed("output") && !fs.Changed("o") {
-		cfg.Output = fileCfg.Output
+	denySet := make(map[string]struct{}, len(deny))
+	for idx := range deny {
+		denySet[deny[idx]] = struct{}{}
 	}
-	if !fs.Changed("extractor-version") {
-		cfg.ExtractorVersion = fileCfg.ExtractorVersion
+	for idx := range allow {
+		if _, ok := denySet[allow[idx]]; ok {
+			fmt.Fprintf(os.Stderr, "bgscan: namespace %q is in both namespaces allowlist and ignore_namespaces; skipping\n", allow[idx])
+		}
 	}
-	if !fs.Changed("whole-document") {
-		cfg.WholeDocument = fileCfg.WholeDocument
-	}
-	if !fs.Changed("auto-arrangement") {
-		cfg.AutoArrangement = fileCfg.AutoArrangement
-	}
-	if !fs.Changed("endpoint") {
-		cfg.Endpoint = fileCfg.Endpoint
-	}
-	if !fs.Changed("org") {
-		cfg.Org = fileCfg.Org
-	}
-	if !fs.Changed("document") {
-		cfg.Document = fileCfg.Document
-	}
-	if !fs.Changed("cluster") {
-		cfg.Cluster = fileCfg.Cluster
-	}
-	if !fs.Changed("api-key") {
-		cfg.APIKey = fileCfg.APIKey
-	}
-	if !fs.Changed("idempotency") {
-		cfg.Idempotency = fileCfg.Idempotency
-	}
-	if !fs.Changed("local-output") {
-		cfg.LocalOutput = fileCfg.LocalOutput
-	}
-	cfg.LocalValidate = fileCfg.LocalValidate
-	return nil
 }
 
 func Execute() {

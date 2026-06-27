@@ -206,3 +206,97 @@ func TestValidatePushConfig_badAPIKeyPrefix(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+func TestLoadBGConfig_ignoreNamespacesAbsentUsesDefaults(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bgconfig.yaml")
+	content := `kubeconfig: ""
+context: ""
+namespaces: []
+output: "-"
+extractor_version: "0.0.0"
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadBGConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaults, err := LoadDefaultScanFilters()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.IgnoreNamespaces) != len(defaults.IgnoreNamespaces) {
+		t.Fatalf("IgnoreNamespaces = %v, want %v", cfg.IgnoreNamespaces, defaults.IgnoreNamespaces)
+	}
+	for idx := range defaults.IgnoreNamespaces {
+		if cfg.IgnoreNamespaces[idx] != defaults.IgnoreNamespaces[idx] {
+			t.Fatalf("IgnoreNamespaces = %v, want %v", cfg.IgnoreNamespaces, defaults.IgnoreNamespaces)
+		}
+	}
+}
+
+func TestLoadBGConfig_ignoreNamespacesEmptyDisablesDefaults(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bgconfig.yaml")
+	content := `kubeconfig: ""
+context: ""
+namespaces: []
+output: "-"
+extractor_version: "0.0.0"
+ignore_namespaces: []
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadBGConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.IgnoreNamespaces == nil || len(cfg.IgnoreNamespaces) != 0 {
+		t.Fatalf("IgnoreNamespaces = %v, want empty slice", cfg.IgnoreNamespaces)
+	}
+}
+
+func TestLoadBGConfig_invalidIgnoreWorkloadPattern(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bgconfig.yaml")
+	content := `kubeconfig: ""
+context: ""
+namespaces: []
+output: "-"
+extractor_version: "0.0.0"
+ignore_workloads:
+  - "bad-pattern"
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := LoadBGConfig(path)
+	if err == nil || !strings.Contains(err.Error(), "scan filters") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestLoadBGConfig_ignoreWorkloadsAbsentUsesEmpty(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bgconfig.yaml")
+	content := `kubeconfig: ""
+context: ""
+namespaces: []
+output: "-"
+extractor_version: "0.0.0"
+ignore_namespaces: []
+`
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadBGConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.IgnoreWorkloads == nil || len(cfg.IgnoreWorkloads) != 0 {
+		t.Fatalf("IgnoreWorkloads = %v, want empty slice", cfg.IgnoreWorkloads)
+	}
+}
