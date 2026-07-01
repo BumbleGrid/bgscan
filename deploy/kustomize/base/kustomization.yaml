@@ -9,6 +9,4 @@ resources:
   - serviceaccount.yaml
   - clusterrole.yaml
   - clusterrolebinding.yaml
-  - secret.yaml
   - cronjob.yaml
-  - job-manual.yaml

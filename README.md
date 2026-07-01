@@ -40,6 +40,11 @@ cluster:
 kubeconfig: ""
 context: ""
 namespaces: []
+ignore_namespaces:
+  - kube-system
+  - bumblegrid-system
+  # ... platform defaults from config/default_scan_filters.yaml
+ignore_workloads: []
 extractor_version: ""
 output: "push"
 endpoint: "https://api.bumblegrid.tech"
@@ -48,38 +53,15 @@ api_key: "bg_sk_..."
 
 Empty `kubeconfig` and `context` mean in-cluster authentication via the pod ServiceAccount.
 
-### 3. Apply namespace, RBAC, and CronJob
+SaaS-generated `bgscan.yaml` includes `ignore_namespaces` and `ignore_workloads` from the pinned bgscan release defaults. Edit those keys in the in-cluster Secret to customize what bgscan skips (same as rotating the API key).
 
-Clone or check out this repository (or copy `deploy/kustomize/` into your GitOps repo), then apply the default overlay:
+### 3. Apply namespace and create the Secret
 
-```bash
-kubectl apply -k deploy/kustomize/overlays/default
-```
-
-This creates:
-
-| Resource | Name | Purpose |
-|----------|------|---------|
-| Namespace | `bumblegrid-system` | Dedicated install namespace |
-| ServiceAccount | `bgscan` | Pod identity |
-| ClusterRole + ClusterRoleBinding | `bgscan` | Read-only scan permissions |
-| Secret | `bgscan-config` | Placeholder config (replace in step 4) |
-| CronJob | `bgscan` | Twice-daily scheduled scan |
-| Job | `bgscan-first-run` | One-off first scan (wait until step 5) |
-
-The bundle includes `job-manual.yaml`. If that Job starts before the Secret holds your real `bgscan.yaml`, it will fail — remove it and re-run after step 4:
+Create the install namespace, then load your SaaS-generated config into a Secret (namespace must exist first):
 
 ```bash
-kubectl delete job bgscan-first-run -n bumblegrid-system --ignore-not-found
-```
+kubectl apply -f deploy/kustomize/base/namespace.yaml
 
-The pinned container image tag lives in `deploy/kustomize/overlays/default/kustomization.yaml` (`images.newTag`). On `main` that value is the placeholder `__BGSCAN_VERSION__`; the [Publish container image](.github/workflows/publish-image.yml) workflow substitutes it (and every other entry in `scripts/release-version-files.txt`) when cutting a release tag.
-
-### 4. Create the Secret from `bgscan.yaml`
-
-Replace the placeholder Secret with your SaaS-generated file:
-
-```bash
 kubectl create secret generic bgscan-config \
   --from-file=bgscan.yaml=./bgscan.yaml \
   -n bumblegrid-system \
@@ -90,18 +72,31 @@ Do not commit `bgscan.yaml` or rendered Secret manifests to git. Encrypt Secrets
 
 To rotate the API key later, update the Secret the same way; the next Job or CronJob run picks up the new key automatically.
 
-### 5. Run the first scan
+### 4. Apply RBAC and CronJob
 
-With the real Secret in place, start the one-off Job:
+With the real Secret in place, install the workload overlay (ServiceAccount, ClusterRole, ClusterRoleBinding, CronJob — no Secret, no first-run Job):
 
 ```bash
-kubectl apply -f deploy/kustomize/base/job-manual.yaml -n bumblegrid-system
+kubectl apply -k deploy/kustomize/overlays/workload
 ```
 
-If `bgscan-first-run` already exists from step 3, delete it first (Jobs are immutable):
+This creates:
+
+| Resource | Name | Purpose |
+|----------|------|---------|
+| ServiceAccount | `bgscan` | Pod identity |
+| ClusterRole + ClusterRoleBinding | `bgscan` | Read-only scan permissions |
+| CronJob | `bgscan` | Twice-daily scheduled scan |
+
+The pinned container image tag lives in `deploy/kustomize/overlays/workload/kustomization.yaml` (`images.newTag`). On `main` that value is the placeholder `__BGSCAN_VERSION__`; the [Publish container image](.github/workflows/publish-image.yml) workflow substitutes it (and every other entry in `scripts/release-version-files.txt`) when cutting a release tag.
+
+`deploy/kustomize/overlays/default` still applies namespace plus the same workloads in one step — useful for GitOps or manual installs that create the Secret separately. The onboarding UI uses the workload overlay after step 3 so re-applying manifests never overwrites your Secret.
+
+### 5. Run the first scan
+
+Start the one-off Job:
 
 ```bash
-kubectl delete job bgscan-first-run -n bumblegrid-system --ignore-not-found
 kubectl apply -f deploy/kustomize/base/job-manual.yaml -n bumblegrid-system
 ```
 
@@ -148,12 +143,26 @@ Patch the overlay or add your own kustomize layer:
 
 | Setting | Location | Notes |
 |---------|----------|-------|
-| Image tag | `deploy/kustomize/overlays/default/kustomization.yaml` → `images.newTag` | Published tags from [Publishing](#publishing-maintainers); `main` holds `__BGSCAN_VERSION__` until release |
+| Image tag | `deploy/kustomize/overlays/workload/kustomization.yaml` (or `overlays/default`) → `images.newTag` | Published tags from [Publishing](#publishing-maintainers); `main` holds `__BGSCAN_VERSION__` until release |
 | Namespace | overlay `namespace:` field + subject namespace in binding | Default `bumblegrid-system` |
 | Cron schedule | `deploy/kustomize/base/cronjob.yaml` → `spec.schedule` | Cron syntax |
 | CPU/memory | `cronjob.yaml` / `job-manual.yaml` pod `resources` | Raise limits on large clusters |
 | Scan timeout | `activeDeadlineSeconds` on Job/CronJob | Default 1800s (30 minutes) |
-| Namespace filter | `namespaces` in `bgscan.yaml` | Empty list scans all accessible namespaces |
+| Namespace allowlist | `namespaces` in `bgscan.yaml` | Empty list = all accessible namespaces (before ignores) |
+| Namespace denylist | `ignore_namespaces` in `bgscan.yaml` | Omitted = built-in platform defaults; `[]` = scan everything |
+| Workload denylist | `ignore_workloads` in `bgscan.yaml` | Omitted = no workload filtering; glob patterns `namespace/kind/name` |
+
+Default `ignore_namespaces` live in [`config/default_scan_filters.yaml`](config/default_scan_filters.yaml) (also vendored into the BumbleGrid monorepo when `BGSCAN_DEPLOY_REF` bumps). To scan platform namespaces too, set `ignore_namespaces: []`. Clusters using `ingress-nginx` or similar instead of a namespace literally named `ingress` should edit that entry.
+
+Workload pattern examples (Floor 0 kinds: `deployments`, `statefulsets`, `daemonsets`, `cronjobs`, `jobs`, `services`, `ingresses`):
+
+| Pattern | Matches |
+|---------|---------|
+| `payments/deployments/eppo*` | Deployments named `eppo…` in `payments` |
+| `payments/*/eppo-*` | Any Floor 0 kind with name `eppo-…` in `payments` |
+| `*/services/kube-dns` | `kube-dns` Service in any scanned namespace |
+
+CLI overrides: `--ignore-namespaces`, `--ignore-workloads` (comma-separated).
 
 ### RBAC reference
 
@@ -267,7 +276,9 @@ Optional: put the same settings in `bgconfig.yaml` and pass `--config /path/to/b
 | `--config` | Path to `bgscan.yaml` / `bgconfig.yaml` inside the container |
 | `--kubeconfig` | Path to kubeconfig (default: in-cluster, then `~/.kube/config`) |
 | `--context` | Single kubeconfig context to scan |
-| `--namespaces` | Comma-separated namespace filter |
+| `--namespaces` | Comma-separated namespace allowlist |
+| `--ignore-namespaces` | Comma-separated namespace denylist (default: built-in platform list) |
+| `--ignore-workloads` | Comma-separated workload deny patterns (`namespace/kind/name` globs) |
 | `--local-output` | Write the JSON to this path (in addition to push when `output: push`) |
 | `--whole-document` | Emit full BGSpec document instead of floor 0 only |
 | `--push-dry-run` | Print the resolved push request without sending it |

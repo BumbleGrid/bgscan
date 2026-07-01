@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: bumblegrid-system
+
+commonLabels:
+  app.kubernetes.io/part-of: bumblegrid
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Namespace
+      name: bumblegrid-system
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: bumblegrid-system
+
+images:
+  - name: bumblegrid/bgscan
+    newTag: "__BGSCAN_VERSION__"

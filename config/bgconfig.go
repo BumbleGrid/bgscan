@@ -22,6 +22,8 @@ type bgConfigFile struct {
 	Kubeconfig       string   `yaml:"kubeconfig"`
 	Context          string   `yaml:"context"`
 	Namespaces       []string `yaml:"namespaces"`
+	IgnoreNamespaces []string `yaml:"ignore_namespaces"`
+	IgnoreWorkloads  []string `yaml:"ignore_workloads"`
 	Output           string   `yaml:"output"`
 	ExtractorVersion string   `yaml:"extractor_version"`
 	WholeDocument    bool     `yaml:"whole_document"`
@@ -62,10 +64,16 @@ func LoadBGConfig(path string) (Config, error) {
 	if parsed.Output == OutputPush && parsed.LocalValidate == nil {
 		localValidate = true
 	}
+	ignoreNamespaces, ignoreWorkloads, err := resolveScanFilterFields(raw, parsed)
+	if err != nil {
+		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
+	}
 	cfg := Config{
 		Kubeconfig:       parsed.Kubeconfig,
 		Context:          parsed.Context,
 		Namespaces:       parsed.Namespaces,
+		IgnoreNamespaces: ignoreNamespaces,
+		IgnoreWorkloads:  ignoreWorkloads,
 		Output:           parsed.Output,
 		ExtractorVersion: parsed.ExtractorVersion,
 		WholeDocument:    parsed.WholeDocument,
@@ -79,10 +87,29 @@ func LoadBGConfig(path string) (Config, error) {
 		LocalValidate:    localValidate,
 		LocalOutput:      parsed.LocalOutput,
 	}
+	if err := ValidateScanFilters(cfg.IgnoreNamespaces, cfg.IgnoreWorkloads); err != nil {
+		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
+	}
 	if err := ValidatePushConfig(cfg); err != nil {
 		return Config{}, fmt.Errorf("bgconfig %s: %w", path, err)
 	}
 	return cfg, nil
+}
+
+func resolveScanFilterFields(raw map[string]interface{}, parsed bgConfigFile) ([]string, []string, error) {
+	defaults, err := LoadDefaultScanFilters()
+	if err != nil {
+		return nil, nil, err
+	}
+	ignoreNamespaces := defaults.IgnoreNamespaces
+	if _, ok := raw["ignore_namespaces"]; ok {
+		ignoreNamespaces = parsed.IgnoreNamespaces
+	}
+	ignoreWorkloads := defaults.IgnoreWorkloads
+	if _, ok := raw["ignore_workloads"]; ok {
+		ignoreWorkloads = parsed.IgnoreWorkloads
+	}
+	return ignoreNamespaces, ignoreWorkloads, nil
 }
 
 func clusterSlugFromRaw(raw map[string]interface{}) (string, error) {

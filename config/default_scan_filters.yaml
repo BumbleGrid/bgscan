@@ -1,0 +1,11 @@
+ignore_namespaces:
+  - kube-node-lease
+  - default
+  - kube-public
+  - ingress
+  - metallb-system
+  - kube-system
+  - datadog
+  - argocd
+  - bumblegrid-system
+ignore_workloads: []

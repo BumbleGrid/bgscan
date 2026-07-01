@@ -13,6 +13,20 @@ context: ""
 # Namespaces to scan; [] means all namespaces you can access.
 namespaces: []
 
+# Namespaces to exclude after the allowlist above. When this key is omitted,
+# bgscan uses the built-in defaults in config/default_scan_filters.yaml.
+# Set ignore_namespaces: [] to scan every accessible namespace (including platform NS).
+# ignore_namespaces:
+#   - kube-system
+#   - bumblegrid-system
+
+# Workload deny patterns as namespace/kind/name globs (Floor 0 kinds only).
+# When omitted, no workloads are filtered. Kind segment: deployments, statefulsets,
+# daemonsets, cronjobs, jobs, services, ingresses.
+# ignore_workloads:
+#   - "payments/deployments/eppo*"
+#   - "apps/*/legacy-*"
+
 # BGSpec JSON output path; "-" is stdout.
 output: "-"
 

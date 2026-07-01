@@ -3,8 +3,9 @@ module github.com/BumbleGrid/bgscan
 go 1.22.2
 
 require (
-	github.com/BumbleGrid/bgbase v0.0.1-beta.3
+	github.com/BumbleGrid/bgbase v0.0.1-beta.6
 	github.com/spf13/cobra v1.8.0
+	github.com/spf13/pflag v1.0.5
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/client-go v0.29.3
 )
@@ -30,7 +31,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
